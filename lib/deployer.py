@@ -129,6 +129,9 @@ class Run:
     def out(self, cmd: list[str], cwd: Path, env: dict | None = None) -> str:
         return subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, check=True).stdout.strip()
 
+    def close(self) -> None:
+        self.log.close()
+
     def tail(self) -> list[str]:
         self.log.flush()
         return self.path.read_text(errors="replace").splitlines()[-LOG_TAIL:]
@@ -326,6 +329,7 @@ def run(name: str, force: bool = False) -> int:
         event(st, "failed", f"{target[:8]} {reason}." + (f" Rolled back to {restored[:8]}." if restored else " Nothing to roll back to."), target)
         save_state(app, st)
         notify(app, f"❌ {target[:8]} rejected: {reason}")
+        r.close()
         return 1
     st = load_state(app)
     st.pop("running", None)
@@ -335,6 +339,7 @@ def run(name: str, force: bool = False) -> int:
     event(st, "live", f"{target[:8]} live", target, build_s=build_s)
     save_state(app, st)
     notify(app, f"✅ deployed {target[:8]}")
+    r.close()
     return 0
 
 

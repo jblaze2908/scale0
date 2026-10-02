@@ -77,6 +77,11 @@ deploy() {
   case "$sub" in
     add)
       need_name "${1:-}"; local app="$1" dir="${2:?usage: scale0 deploy add <app> <repo-dir>}"
+      # An app moving over from its own script may not have pulled the commit that adds app.conf yet: take its branch's files.
+      if [[ ! -f "$dir/deploy/app.conf" ]] && git -C "$dir" -c safe.directory="$dir" fetch -q origin 2>/dev/null \
+         && git -C "$dir" -c safe.directory="$dir" cat-file -e FETCH_HEAD:deploy/app.conf 2>/dev/null; then
+        git -C "$dir" -c safe.directory="$dir" checkout -q --detach FETCH_HEAD
+      fi
       [[ -f "$dir/deploy/app.conf" ]] || die "no $dir/deploy/app.conf"
       page_user
       install -d -m 755 /etc/scale0/apps && printf '%s\n' "$(cd "$dir" && pwd)" >"/etc/scale0/apps/$app"
