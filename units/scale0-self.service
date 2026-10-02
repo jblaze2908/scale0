@@ -1,0 +1,10 @@
+# scale0 updating itself (lib/self-update.sh): small, separate from the deployer, so a broken deployer can be replaced.
+[Unit]
+Description=Update scale0 from its main branch
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/scale0/lib/self-update.sh
+TimeoutStartSec=40min

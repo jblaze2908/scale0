@@ -1,0 +1,11 @@
+# "Deploy now" from the status page: the same run, forced, so a commit that failed before is tried again.
+[Unit]
+Description=Deploy %i now
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/scale0/lib/deployer.py run %i --force
+TimeoutStartSec=30min
+NoNewPrivileges=true
+PrivateTmp=true

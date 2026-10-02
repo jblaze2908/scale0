@@ -23,6 +23,9 @@ PORT = int(os.environ.get("SCALE0_STATUS_PORT", "8359"))
 PAGE = (Path(__file__).parent / "index.html").read_bytes()
 NAME_RE = re.compile(r"^[a-z][a-z0-9-]{0,30}$")
 ACTION_RE = re.compile(r"^/api/services/([a-z][a-z0-9-]{0,30})/(wake|sleep)$")
+DEPLOY_RE = re.compile(r"^/api/apps/([a-z][a-z0-9-]{0,30})/(deploy|rollback)$")
+DEPLOY_STATE = Path("/var/lib/scale0-deploy")
+SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
 PROPS = "ActiveState,SubState,StateChangeTimestampMonotonic,InactiveExitTimestampMonotonic,ActiveEnterTimestampMonotonic"
 
 _cache = {"at": 0.0, "body": b""}
@@ -160,6 +163,45 @@ def status() -> bytes:
     return body
 
 
+def deploys() -> list[dict]:
+    """The deployer's state per registered app (lib/deployer.py writes it, 0640 to this page's group)."""
+    out = []
+    for reg in sorted(Path("/etc/scale0/apps").glob("*")):
+        if not NAME_RE.match(reg.name):
+            continue
+        try:
+            st = json.loads((DEPLOY_STATE / reg.name / "state.json").read_text())
+        except (OSError, ValueError):
+            st = {}
+        up, now_unit = show(f"scale0-deploy@{reg.name}.service", f"scale0-deploy-now@{reg.name}.service")
+        busy = any(u.get("ActiveState") in ("activating", "reloading") for u in (up, now_unit)) or bool(st.get("running"))
+        out.append({"name": reg.name, "deployed": st.get("deployed"), "head": st.get("head"), "failed": st.get("failed"), "hold": st.get("hold"),
+                    "running": st.get("running"), "busy": busy, "releases": st.get("releases", []), "events": st.get("events", [])[:20],
+                    "last_check_at": st.get("last_check_at")})
+    return out
+
+
+def deploy_act(name: str, verb: str, body: dict) -> tuple[int, dict]:
+    """Deploy now or roll back one app by starting its unit; polkit allows only these, and the deployer re-checks."""
+    if not (Path("/etc/scale0/apps") / name).is_file():
+        return 404, {"error": "no such app"}
+    if verb == "deploy":
+        unit = f"scale0-deploy-now@{name}.service"
+    else:
+        commit = str(body.get("commit", ""))
+        try:
+            kept = json.loads((DEPLOY_STATE / name / "state.json").read_text()).get("releases", [])
+        except (OSError, ValueError):
+            kept = []
+        if not SHA_RE.match(commit) or not any(r["commit"].startswith(commit) and r.get("status") in ("superseded", "serving") for r in kept):
+            return 400, {"error": "not a kept release"}
+        unit = f"scale0-rollback@{name}-{commit}.service"
+    done = subprocess.run(["systemctl", "--no-block", "start", unit], capture_output=True, text=True, timeout=10)
+    if done.returncode != 0:
+        return 502, {"error": f"systemd refused to {verb} {name}"}
+    return 200, {"ok": True}
+
+
 def act(name: str, verb: str) -> tuple[int, dict]:
     """Wake or sleep one opted-in service. --no-block: the page shows waking/asleep from the next poll."""
     if not (CONF / f"{name}.env").is_file():
@@ -176,6 +218,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 (http.server's name)
         if self.path == "/":
             self.reply(200, "text/html; charset=utf-8", PAGE)
+        elif self.path == "/api/deploys":
+            try:
+                self.reply(200, "application/json", json.dumps({"at": time.time(), "apps": deploys()}).encode())
+            except Exception:
+                self.reply(500, "application/json", b'{"error":"deploys unavailable"}')
         elif self.path == "/api/status":
             try:
                 self.reply(200, "application/json", status())
@@ -185,7 +232,7 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(404, "text/plain", b"not found")
 
     def do_POST(self) -> None:  # noqa: N802
-        match = ACTION_RE.match(self.path)
+        match = ACTION_RE.match(self.path) or DEPLOY_RE.match(self.path)
         if not match:
             return self.reply(404, "text/plain", b"not found")
         # Only this page may act: its own header (a form or a cross-site fetch can't set it without a preflight we
@@ -194,7 +241,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get("X-Scale0") != "1" or (origin and urlparse(origin).netloc != self.headers.get("Host")):
             return self.reply(403, "application/json", b'{"error":"refused"}')
         try:
-            code, body = act(match.group(1), match.group(2))
+            if match.re is DEPLOY_RE:
+                length = min(int(self.headers.get("Content-Length") or 0), 4096)
+                payload = json.loads(self.rfile.read(length) or b"{}") if length else {}
+                code, body = deploy_act(match.group(1), match.group(2), payload if isinstance(payload, dict) else {})
+            else:
+                code, body = act(match.group(1), match.group(2))
         except Exception:
             code, body = 500, {"error": "action failed"}
         self.reply(code, "application/json", json.dumps(body).encode())

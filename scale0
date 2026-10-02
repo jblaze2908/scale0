@@ -7,6 +7,8 @@
 #   scale0 wake|sleep <name>
 #   scale0 restart <name>   sleep then wake: deploys use it so a new image takes over
 #   scale0 managed <name>   exit 0 when <name> is opted in (for deploy scripts)
+#   scale0 deploy add <app> <repo-dir>   deploy <app> from <repo-dir>/deploy/app.conf on a 2-minute timer
+#   scale0 deploy remove <app> | status | run <app> | rollback <app> <commit>
 set -euo pipefail
 REPO="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 CONF=/etc/scale0
@@ -64,6 +66,32 @@ status() {
 # Stopping the proxy while its socket stays up is the point; drop systemd's warning that the socket is still active.
 nap() { systemctl stop "scale0@$1.service" "scale0-up@$1.service" 2> >(grep -v -e "triggering units are still active" -e "^scale0@.*\.socket$" >&2); }
 
+# The page's user and its polkit rule, shared by enable and deploy add.
+page_user() {
+  getent -s files passwd scale0-status >/dev/null || useradd --system --no-create-home --shell /usr/sbin/nologin scale0-status
+  install -d -m 755 /etc/polkit-1/rules.d && install -m 644 "$REPO/polkit/50-scale0.rules" /etc/polkit-1/rules.d/
+}
+
+deploy() {
+  local sub="${1:-status}"; shift || true
+  case "$sub" in
+    add)
+      need_name "${1:-}"; local app="$1" dir="${2:?usage: scale0 deploy add <app> <repo-dir>}"
+      [[ -f "$dir/deploy/app.conf" ]] || die "no $dir/deploy/app.conf"
+      page_user
+      install -d -m 755 /etc/scale0/apps && printf '%s\n' "$(cd "$dir" && pwd)" >"/etc/scale0/apps/$app"
+      install -d -m 750 -g scale0-status /var/lib/scale0-deploy "/var/lib/scale0-deploy/$app"
+      install -m 644 "$REPO"/units/scale0-deploy@.service "$REPO"/units/scale0-deploy@.timer "$REPO"/units/scale0-deploy-now@.service "$REPO"/units/scale0-rollback@.service /etc/systemd/system/
+      systemctl daemon-reload && systemctl enable --now "scale0-deploy@$app.timer"
+      echo "$app: deploys from $dir on a 2-minute timer (turn its old timer off yourself)" ;;
+    remove) need_name "${1:-}"; systemctl disable --now "scale0-deploy@$1.timer"; rm -f "/etc/scale0/apps/$1"; echo "$1: no longer deployed by scale0 (state kept)" ;;
+    status) python3 "$REPO/lib/deployer.py" status ;;
+    run) need_name "${1:-}"; python3 "$REPO/lib/deployer.py" run "$1" "${@:2}" ;;
+    rollback) need_name "${1:-}"; python3 "$REPO/lib/deployer.py" rollback "$1" "${2:?give a commit}" ;;
+    *) die "deploy: add, remove, status, run, rollback" ;;
+  esac
+}
+
 cmd="${1:-status}"; shift || true
 case "$cmd" in
   status) status ;;
@@ -73,5 +101,6 @@ case "$cmd" in
   sleep) need_name "${1:-}"; nap "$1" ;;
   restart) need_name "${1:-}"; nap "$1"; systemctl start "scale0@$1.service" ;;
   managed) need_name "${1:-}"; systemctl is-enabled --quiet "scale0@$1.socket" ;;
-  *) die "unknown command: $cmd (enable, disable, status, wake, sleep, restart, managed)" ;;
+  deploy) deploy "$@" ;;
+  *) die "unknown command: $cmd (enable, disable, status, wake, sleep, restart, managed, deploy)" ;;
 esac

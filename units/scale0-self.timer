@@ -1,0 +1,9 @@
+[Unit]
+Description=Check scale0 for a new commit every 5 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=5min
+
+[Install]
+WantedBy=timers.target

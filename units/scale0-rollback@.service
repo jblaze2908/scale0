@@ -1,0 +1,12 @@
+# Roll back from the status page: instance is <app>-<commit>. The deployer only accepts a commit from the app's kept
+# releases, and holds the branch head afterwards so the next check doesn't deploy it straight back.
+[Unit]
+Description=Roll back %i
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/scale0/lib/deployer.py rollback-unit %i
+TimeoutStartSec=30min
+NoNewPrivileges=true
+PrivateTmp=true

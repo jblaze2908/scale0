@@ -51,6 +51,20 @@
   .note { font-size:12.5px; color:var(--ink-3); }
   .empty, .err { padding:16px 18px; border-top:1px solid var(--line); color:var(--ink-3); } .err { color:var(--signal); }
   .card-only { display:none; }
+  nav.tabs { display:flex; gap:4px; margin-left:20px; } nav.tabs a { height:32px; padding:0 12px; border-radius:9px; font-size:13px; color:var(--ink-3); display:inline-flex; align-items:center; text-decoration:none; }
+  nav.tabs a.on { background:var(--surface); color:var(--ink); box-shadow:inset 0 0 0 1px var(--line); }
+  .sha { font:12.5px "Geist Mono", ui-monospace, monospace; color:var(--ink); background:var(--surface-2); padding:1px 6px; border-radius:6px; }
+  .dep { display:grid; grid-template-columns:.9fr 2.8fr 1fr .8fr .9fr 1.1fr 196px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
+  .dep.head { border-top:0; padding-top:0; font-size:12px; color:var(--ink-3); }
+  .rel { display:grid; grid-template-columns:110px 2.2fr 1fr .8fr 1fr 150px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
+  .rel.head { border-top:0; padding-top:0; font-size:12px; color:var(--ink-3); }
+  .trunc { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ev { display:flex; gap:12px; align-items:center; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; } .ev time { width:52px; color:var(--ink-3); font-size:12.5px; }
+  .log { font:12px/1.7 "Geist Mono", ui-monospace, monospace; color:var(--ink-2); background:var(--ground-deep); border-radius:10px; padding:12px 14px; white-space:pre; overflow:auto; max-height:260px; }
+  .two { display:grid; grid-template-columns:1.25fr 1fr; gap:20px; } .crumb { color:var(--ink-3); font-size:13px; } .crumb a { color:inherit; }
+  .pill { font-size:12px; height:22px; padding:0 8px; border-radius:7px; display:inline-flex; align-items:center; background:var(--surface-2); color:var(--ink-2); }
+  [hidden] { display:none !important; }
+  @media (max-width:700px) { nav.tabs { margin-left:8px; } .dep, .rel { display:flex; flex-wrap:wrap; gap:6px 12px; } .dep.head, .rel.head, .dep .cell, .rel .cell { display:none; } .two { grid-template-columns:1fr; } }
   @media (max-width:700px) {
     main { padding:20px 16px 24px; gap:16px; } h1 { font-size:21px; }
     .legend .avail { margin-left:0; }
@@ -65,11 +79,14 @@
 </head>
 <body>
 <main>
-  <header><span class="brand">scale0<small id="hostname">on the host</small></span><span class="live"><span class="dot awake" id="liveDot"></span><b id="liveText">Live</b><span id="updated"></span></span></header>
+  <header><span style="display:flex;align-items:center"><span class="brand">scale0<small id="hostname">on the host</small></span><nav class="tabs"><a href="#/services" id="tab-services">Services</a><a href="#/deploys" id="tab-deploys">Deploys</a></nav></span><span class="live"><span class="dot awake" id="liveDot"></span><b id="liveText">Live</b><span id="updated"></span></span></header>
+  <div id="view-services" style="display:contents">
   <div><h1 id="headline">Loading…</h1><p class="lede" id="lede"></p></div>
   <section class="cd" id="memory"></section>
   <section class="cd" id="services"><div class="hd"><span>Services</span></div></section>
   <p class="note">Read from systemd every 2 seconds. Wake starts a service now. Sleep stops it and closes its open connections; its next request wakes it again.</p>
+  </div>
+  <div id="view-deploys" hidden style="display:contents"></div>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -156,6 +173,97 @@ document.addEventListener("click", (e) => {
   else if (act === "sleep-now") { confirming = null; post(name, "sleep"); }
   else if (act === "keep") { confirming = null; render(); }
 });
+
+// ---------- Deploys ----------
+const ago = (t) => { if (!t) return "–"; const s = Date.now() / 1000 - t; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} h ago` : `${Math.floor(s / 86400)} d ago`; };
+const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const day = (t) => t ? new Date(t * 1000).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "–";
+const secs = (s) => s == null ? "–" : s < 60 ? `${Math.round(s)} s` : `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, "0")} s`;
+const sha = (c) => c ? `<span class="sha">${esc(c.slice(0, 7))}</span>` : "–";
+let deps = null, confirmRollback = null, depBusy = new Set();
+const route = () => (location.hash.match(/^#\/deploys(?:\/([a-z][a-z0-9-]{0,30}))?/) || [])[0] ? { view: "deploys", app: location.hash.split("/")[2] || null } : { view: "services" };
+function state(a) {
+  if (a.busy) return { dot: "waking", text: a.running?.rollback ? "Rolling back…" : "Deploying…" };
+  if (a.failed) return { dot: "failed", text: `Rolled back ${clock(a.failed.at)}`, hot: true };
+  return { dot: "awake", text: "Live" };
+}
+function depList() {
+  const apps = deps.apps, behind = apps.filter((a) => a.head && a.deployed && a.head.commit !== a.deployed.commit && !a.failed && a.hold !== a.head.commit);
+  const failed = apps.filter((a) => a.failed);
+  const ok = apps.length - failed.length - behind.length;
+  const title = !apps.length ? "No apps deployed by scale0 yet." : `${ok} ${ok === 1 ? "app" : "apps"} up to date.${failed.length ? ` ${failed.map((a) => a.name).join(", ")}’s last deploy rolled back.` : ""}${behind.length ? ` ${behind.map((a) => a.name).join(", ")} ${behind.length === 1 ? "is" : "are"} deploying next.` : ""}`;
+  const rows = apps.map((a) => { const s = state(a), d = a.deployed || {}, h = a.head || {};
+    const headCell = !h.commit || h.commit === d.commit ? `<span class="faint">same</span>` : `${sha(h.commit)} <span style="color:${a.failed ? "var(--signal)" : "var(--ink-2)"}">${a.hold === h.commit ? "held" : "newer"}</span>`;
+    const act = a.failed ? `<button class="bt bt-signal" data-dep="detail" data-app="${esc(a.name)}">See why</button>` : `<button class="bt bt-ghost" data-dep="deploy" data-app="${esc(a.name)}" ${a.busy || depBusy.has(a.name) ? "disabled" : ""}>${a.busy ? "Running…" : "Deploy now"}</button>`;
+    return `<div class="dep${s.hot ? " cd-hot" : ""}"><span class="name" style="display:flex;align-items:center;gap:12px;font-weight:500"><span class="dot ${s.dot}"></span>${esc(a.name)}</span>
+      <span class="trunc">${sha(d.commit)} <span class="muted">${esc(d.subject || "")}</span></span><span class="cell">${headCell}</span><span class="cell num muted">${ago(d.live_at)}</span>
+      <span class="cell num r">${secs(d.build_s)}</span><span class="cell" style="${s.hot ? "color:var(--signal)" : ""}">${s.text}</span>
+      <span class="act"><a class="bt bt-quiet" href="#/deploys/${esc(a.name)}">History</a>${act}</span></div>`; }).join("");
+  const events = apps.flatMap((a) => (a.events || []).map((e) => ({ ...e, app: a.name }))).sort((x, y) => y.at - x.at).slice(0, 8);
+  const dotOf = (k) => ({ failed: "failed", picked: "waking", live: "awake", rollback: "awake", imported: "asleep" })[k] || "asleep";
+  return `<div><h1>${esc(title)}</h1><p class="lede">Each app’s timer checks its branch every 2 minutes, builds what’s new, and goes live only if the health check passes.</p></div>
+    <section class="cd"><div class="hd"><span>Apps · ${apps.length} deployed by scale0</span><span>History keeps the last releases for rollback</span></div>
+    ${apps.length ? `<div class="dep head"><span>App</span><span>Running</span><span>Branch head</span><span>Went live</span><span class="r">Build</span><span>Health</span><span></span></div>${rows}` : `<div class="empty">Add one with <span class="mono">scale0 deploy add &lt;app&gt; &lt;repo&gt;</span>.</div>`}</section>
+    ${events.length ? `<section class="cd"><div class="hd"><span>Recent activity</span><span>From the deployer</span></div>${events.map((e) => `<div class="ev"><time class="num">${clock(e.at)}</time><span class="dot ${dotOf(e.kind)}"></span><span style="flex:1"><b style="font-weight:500">${esc(e.app)}</b> <span class="muted">${esc(e.text)}</span></span>${e.build_s ? `<span class="faint num" style="font-size:12.5px">${secs(e.build_s)}</span>` : ""}</div>`).join("")}</section>` : ""}
+    <p class="note">Deploy now runs an app’s check immediately and retries a commit that failed. Roll back is in each app’s history and asks first.</p>`;
+}
+function depDetail(a) {
+  const d = a.deployed || {}, f = a.failed;
+  const failCard = f ? `<section class="cd cd-hot"><div class="hd"><span style="color:var(--signal)">Last deploy · rolled back at ${clock(f.at)}</span>${sha(f.commit)}</div>
+    <div style="padding:0 18px 16px;display:flex;flex-direction:column;gap:12px"><p>${esc(f.commit.slice(0, 7))} ${esc(f.reason)}.${f.restored ? ` The deployer put ${esc(f.restored.slice(0, 7))} back.` : " There was no earlier release to put back."}</p><div class="log">${esc((f.log || []).join("\n"))}</div></div></section>` : "";
+  const rels = (a.releases || []).map((r) => {
+    const can = r.status === "superseded", open = confirmRollback === `${a.name}:${r.commit}`;
+    const status = r.status === "serving" ? `<span style="display:flex;align-items:center;gap:8px"><span class="dot awake"></span>Serving</span>` : r.status === "rolled back" ? `<span style="color:var(--signal)">Rolled back</span>` : `<span class="faint">Superseded</span>`;
+    return `<div class="rel"${open ? ` style="background:var(--surface-2)"` : ""}><span>${sha(r.commit)}</span><span class="trunc muted">${esc(r.subject || "")}</span><span class="cell num muted">${day(r.live_at)}</span><span class="cell num r">${secs(r.build_s)}</span><span>${status}</span>
+      <span class="act">${can ? `<button class="bt bt-ghost" data-dep="ask-rollback" data-app="${esc(a.name)}" data-commit="${esc(r.commit)}" ${open || a.busy ? "disabled" : ""}>Roll back</button>` : ""}</span>
+      ${open ? `<div class="confirm"><p>Roll ${esc(a.name)} back to ${esc(r.commit.slice(0, 7))}? <span>It rebuilds that commit and restarts on it. Database changes since then stay; the pre-deploy backup is kept. The branch head is held until the next push.</span></p>
+      <div class="act"><button class="bt bt-primary" data-dep="rollback" data-app="${esc(a.name)}" data-commit="${esc(r.commit)}">Roll back</button><button class="bt bt-ghost" data-dep="cancel">Cancel</button></div></div>` : ""}</div>`; }).join("");
+  const title = f ? `${a.name} is serving ${(d.commit || "").slice(0, 7)}. Its newest commit didn’t pass.` : `${a.name} is serving ${(d.commit || "").slice(0, 7) || "nothing yet"}.`;
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px"><div><p class="crumb"><a href="#/deploys">Deploys</a> / ${esc(a.name)}</p><h1>${esc(title)}</h1></div>
+    <button class="bt bt-primary" data-dep="deploy" data-app="${esc(a.name)}" ${a.busy ? "disabled" : ""}>${a.busy ? "Running…" : f ? `Retry ${esc(f.commit.slice(0, 7))}` : "Deploy now"}</button></div>
+    ${failCard}
+    <section class="cd"><div class="hd"><span>Running</span>${sha(d.commit)}</div><div class="kv"><span>Subject</span><span>${esc(d.subject || "–")}</span></div><div class="kv"><span>Went live</span><span class="num">${day(d.live_at)}${d.how === "rollback" ? " · by rollback" : ""}</span></div>
+      <div class="kv"><span>Branch head</span><span>${sha(a.head?.commit)}${a.hold && a.hold === a.head?.commit ? " · held after a rollback" : ""}</span></div><div class="kv"><span>Last check</span><span class="num">${ago(a.last_check_at)}</span></div></section>
+    <section class="cd"><div class="hd"><span>Releases</span><span>Rollback rebuilds the commit</span></div>${rels ? `<div class="rel head"><span>Commit</span><span>Subject</span><span>Went live</span><span class="r">Build</span><span>Status</span><span></span></div>${rels}` : `<div class="empty">No releases yet.</div>`}</section>`;
+}
+function renderDeploys() {
+  const el = $("view-deploys"), r = route();
+  if (!deps) { el.innerHTML = `<div><h1>Loading…</h1></div>`; return; }
+  const a = r.app && deps.apps.find((x) => x.name === r.app);
+  el.innerHTML = a ? depDetail(a) : depList();
+}
+async function pollDeploys() {
+  try { const res = await fetch("/api/deploys", { cache: "no-store" }); if (res.ok) { deps = await res.json(); renderDeploys(); } } catch {}
+}
+async function depPost(app, verb, body) {
+  depBusy.add(app); renderDeploys();
+  try {
+    const r = await fetch(`/api/apps/${encodeURIComponent(app)}/${verb}`, { method: "POST", headers: { "X-Scale0": "1", "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+  } catch (e) { const el = document.createElement("div"); el.className = "cd err"; el.textContent = `Couldn’t ${verb} ${app}: ${e.message}`; $("view-deploys").prepend(el); setTimeout(() => el.remove(), 8000); }
+  finally { depBusy.delete(app); setTimeout(pollDeploys, 800); }
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-dep]");
+  if (!b) return;
+  const { dep, app, commit } = b.dataset;
+  if (dep === "deploy") depPost(app, "deploy");
+  else if (dep === "detail") location.hash = `#/deploys/${app}`;
+  else if (dep === "ask-rollback") { confirmRollback = `${app}:${commit}`; renderDeploys(); }
+  else if (dep === "cancel") { confirmRollback = null; renderDeploys(); }
+  else if (dep === "rollback") { confirmRollback = null; depPost(app, "rollback", { commit }); }
+});
+function show() {
+  const r = route();
+  $("view-services").hidden = r.view !== "services"; $("view-deploys").hidden = r.view !== "deploys";
+  $("view-services").style.display = r.view === "services" ? "contents" : "none";
+  $("view-deploys").style.display = r.view === "deploys" ? "contents" : "none";
+  $("tab-services").className = r.view === "services" ? "on" : ""; $("tab-deploys").className = r.view === "deploys" ? "on" : "";
+  if (r.view === "deploys") { renderDeploys(); pollDeploys(); }
+}
+window.addEventListener("hashchange", show);
+setInterval(() => { if (route().view === "deploys") pollDeploys(); }, 3000);
+show();
 
 let timer = null;
 async function poll() {

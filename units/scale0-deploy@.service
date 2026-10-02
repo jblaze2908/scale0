@@ -1,0 +1,14 @@
+# One pull-deploy check of app %i (lib/deployer.py): new commit -> build, back up, roll out, health check, roll back on
+# failure. Root: it needs Docker and the app's read-only deploy key. Logs go to the journal and the app's state dir.
+[Unit]
+Description=Deploy %i if its branch moved
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/scale0/lib/deployer.py run %i
+# The build plus a Chromium or Python layer takes minutes on 2 vCPU.
+TimeoutStartSec=30min
+NoNewPrivileges=true
+PrivateTmp=true

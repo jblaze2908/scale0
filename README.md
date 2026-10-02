@@ -48,6 +48,42 @@ stop `scale0@*` / `scale0-up@*` units and nothing else (restart included). Actio
 header and a same-host Origin; on the host it sits behind SSO proxy at https://scale0.example.com. Design:
 Draft canvas "scale0 — Dashboard" (Engram's tokens).
 
+## Deploys
+
+`lib/deployer.py` is one pull-based deployer for every app on the host, replacing each app's own `pull-update.sh`.
+An app opts in with `deploy/app.conf` in its repo and `scale0 deploy add <app> <repo-dir>`; a `scale0-deploy@<app>`
+timer then checks its branch every 2 min: build, pre-deploy backup (`pg_dump:<service>` or `command:<shell>`), roll out
+(always-on services directly, `mode = sleep` ones through `scale0 restart`, so they can sleep again), health check, and
+roll back to the last good commit on failure. A failed commit isn't retried until Deploy now or a new push; a manual
+rollback holds the branch head the same way. State, release history and log tails are in `/var/lib/scale0-deploy/<app>/`
+for `scale0 deploy status` and the page's Deploys tab (Deploy now, Roll back; polkit allows exactly those units).
+
+```ini
+[app]
+compose = deploy/compose.yml
+project = draft
+env_file = /etc/draft/draft.env
+key =                                  ; read-only deploy key, empty for a public https remote
+health = http://172.17.0.1:8320/healthz
+backup = pg_dump:db
+notify = NTFY_URL NTFY_TOKEN           ; env-file keys for the ntfy URL and token, then an optional topic
+
+[service.db]
+mode = always
+
+[service.app]
+mode = sleep
+scale0 = draft
+```
+
+### Who deploys the deployer
+
+`lib/self-update.sh` (`scale0-self.timer`, every 5 min) and nothing else: fetch main over `/root/.ssh/scale0_deploy`,
+check the candidate in a scratch worktree (compile, `bash -n`, `tests/test_deployer.py`), wait for every app's deploy
+lock, switch, reinstall units and the polkit rule, restart the page, and prove it answers. Any failure keeps or restores
+the last good commit and alerts. The deployer has no daemon, so a switch never interrupts it. By hand, always:
+`git -C /opt/scale0 checkout <good>`.
+
 ## Install on a host
 
 ```

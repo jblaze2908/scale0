@@ -1,8 +1,10 @@
-// The status page's user may start and stop scale0's own units, nothing else: wake and sleep from the dashboard
-// without running the page as root. Installed by `scale0 enable` into /etc/polkit-1/rules.d/.
+// The status page's user may start and stop scale0's own units, nothing else: wake and sleep a service, run a deploy
+// check or roll back an app, without running the page as root. Installed by `scale0 enable` / `scale0 deploy add`.
 polkit.addRule(function (action, subject) {
   if (action.id !== "org.freedesktop.systemd1.manage-units" || subject.user !== "scale0-status") return polkit.Result.NOT_HANDLED;
   var unit = action.lookup("unit"), verb = action.lookup("verb");
   if (/^scale0(-up)?@[a-z][a-z0-9-]{0,30}\.service$/.test(unit) && (verb === "start" || verb === "stop")) return polkit.Result.YES;
+  if (/^scale0-deploy-now@[a-z][a-z0-9-]{0,30}\.service$/.test(unit) && verb === "start") return polkit.Result.YES;
+  if (/^scale0-rollback@[a-z][a-z0-9-]{0,30}-[0-9a-f]{7,40}\.service$/.test(unit) && verb === "start") return polkit.Result.YES;
   return polkit.Result.NOT_HANDLED;
 });

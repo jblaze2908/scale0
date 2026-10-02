@@ -1,0 +1,10 @@
+[Unit]
+Description=Check %i for a new commit every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=2min
+RandomizedDelaySec=15s
+
+[Install]
+WantedBy=timers.target
