@@ -34,6 +34,8 @@ enable() {
     die "$listen is still bound (the service itself?). Move its bind to $target, then run enable again"
   fi
   systemctl enable --now "scale0@$name.socket"
+  # files only: a running DynamicUser of the same name would satisfy a plain id check
+  getent -s files passwd scale0-status >/dev/null || useradd --system --no-create-home --shell /usr/sbin/nologin scale0-status
   systemctl enable --now scale0-status.service
   echo "$name: scale-to-zero on $listen → $target, sleeps after $(field "$name" IDLE) idle"
 }
@@ -57,14 +59,17 @@ status() {
   done
 }
 
+# Stopping the proxy while its socket stays up is the point; drop systemd's warning that the socket is still active.
+nap() { systemctl stop "scale0@$1.service" "scale0-up@$1.service" 2> >(grep -v -e "triggering units are still active" -e "^scale0@.*\.socket$" >&2); }
+
 cmd="${1:-status}"; shift || true
 case "$cmd" in
   status) status ;;
   enable) need_name "${1:-}"; enable "$1" ;;
   disable) need_name "${1:-}"; disable "$1" ;;
   wake) need_name "${1:-}"; systemctl start "scale0@$1.service" ;;
-  sleep) need_name "${1:-}"; systemctl stop "scale0@$1.service" "scale0-up@$1.service" ;;
-  restart) need_name "${1:-}"; systemctl stop "scale0@$1.service" "scale0-up@$1.service"; systemctl start "scale0@$1.service" ;;
+  sleep) need_name "${1:-}"; nap "$1" ;;
+  restart) need_name "${1:-}"; nap "$1"; systemctl start "scale0@$1.service" ;;
   managed) need_name "${1:-}"; systemctl is-enabled --quiet "scale0@$1.socket" ;;
   *) die "unknown command: $cmd (enable, disable, status, wake, sleep, restart, managed)" ;;
 esac

@@ -8,7 +8,10 @@ After=network.target
 Environment=SCALE0_STATUS_BIND=172.17.0.1
 Environment=SCALE0_STATUS_PORT=8359
 ExecStart=/usr/bin/python3 /opt/scale0/status/server.py
-DynamicUser=true
+# A fixed system user (made by `scale0 enable`), not DynamicUser: D-Bus refused dynamic users on the host ("Transport
+# endpoint is not connected"), so every systemctl call failed and the page showed every service as off.
+User=scale0-status
+Group=scale0-status
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
