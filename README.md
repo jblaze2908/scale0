@@ -23,7 +23,8 @@ dependencies keep running. No new software: systemd and `systemd-socket-proxyd` 
 ## Opting a service in
 
 1. Add `services/<name>.env` (see `services/draft.env`): `LISTEN` is the address your reverse proxy already points at,
-   `TARGET` a new host-local address the service binds instead, `IDLE`, the compose project and service, `HEALTH_URL`.
+   `TARGET` a new host-local address the service binds instead, `IDLE`, the compose project and service, `HEALTH_URL`,
+   and optionally `UP_ARGS=--no-deps` when a wake shouldn't rerun one-shot dependencies such as migrations.
 2. Rebind the service from `LISTEN` to `TARGET` and redeploy it.
 3. `scale0 enable <name>`.
 

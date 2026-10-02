@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Wake: start the one service (its dependencies come up with it), then wait until it is healthy.
+# Wake: start the one service (its dependencies come up with it, unless UP_ARGS=--no-deps), then wait until it is healthy.
 set -euo pipefail
 cd "$COMPOSE_DIR"
 # shellcheck disable=SC2086 # COMPOSE_ARGS is a word list from the root-only env file
-docker compose $COMPOSE_ARGS up --detach --no-build "$SERVICE"
+# UP_ARGS=--no-deps skips one-shot dependencies (migrations) a deploy already ran; db and the like stay up anyway.
+docker compose $COMPOSE_ARGS up --detach --no-build ${UP_ARGS:-} "$SERVICE"
 # The container id, so the status page can read its memory from the cgroup without the Docker socket.
 install -d -m 755 /run/scale0
 docker compose $COMPOSE_ARGS ps -q "$SERVICE" >"/run/scale0/$NAME.cid"
