@@ -123,7 +123,7 @@ function row(s) {
     <span class="cell num muted">${dur(s.since_s)}</span><span class="cell num r">${conns}</span><span class="cell num r">${memory}</span>
     <span class="cell num r">${cold}</span><span class="cell num r muted">${esc(span(s.idle))}</span>
     <span class="card-only muted" ${s.state === "failed" ? `style="color:var(--signal)"` : ""}>${LABEL[s.state] || esc(s.state)} · ${dur(s.since_s)}</span>
-    <span class="card-only facts"><span>Connections <b class="num">${s.state === "awake" ? s.connections : "–"}</b></span><span>Memory <b class="num">${s.state === "asleep" ? mb(s.last_memory_mb) + " freed" : mb(s.memory_mb)}</b></span><span>Cold start <b class="num">${cold}</b></span><span>Sleeps after <b class="num">${esc(span(s.idle))}</b></span></span>
+    <span class="card-only facts"><span>Connections <b class="num">${s.state === "awake" ? s.connections : "–"}</b></span><span>Memory <b class="num">${s.state === "asleep" ? mb(s.last_memory_mb) + " freed" : mb(s.memory_mb)}</b></span><span>Cold start <b class="num">${cold}</b></span><span>Idle timeout <b class="num">${esc(span(s.idle))}</b></span></span>
     <span class="act">${action(s)}</span>${confirm}</div>`;
 }
 
@@ -132,8 +132,8 @@ function render() {
   const svcs = data.services;
   $("headline").textContent = headline(svcs);
   renderMemory(data.host, svcs);
-  $("services").innerHTML = `<div class="hd"><span>Services · ${svcs.length} opted in</span><span>Sleeps after no connection for the time shown</span></div>
-    ${svcs.length ? `<div class="row head"><span>Service</span><span>State</span><span>Since</span><span class="r">Connections</span><span class="r">Memory</span><span class="r">Cold start</span><span class="r">Sleeps after</span><span></span></div>${svcs.map(row).join("")}`
+  $("services").innerHTML = `<div class="hd"><span>Services · ${svcs.length} opted in</span><span>Each sleeps once it has had no connection for its idle timeout</span></div>
+    ${svcs.length ? `<div class="row head"><span>Service</span><span>State</span><span>Since</span><span class="r">Connections</span><span class="r">Memory</span><span class="r">Cold start</span><span class="r">Idle timeout</span><span></span></div>${svcs.map(row).join("")}`
       : `<div class="empty">No services opted in yet. Run <span class="mono">scale0 enable &lt;name&gt;</span> on the host.</div>`}`;
 }
 
