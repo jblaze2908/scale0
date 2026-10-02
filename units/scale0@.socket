@@ -1,0 +1,11 @@
+# Holds a sleeping service's address. Connections queue in the kernel backlog while scale0@%i.service wakes the
+# service, so the first request waits instead of failing. The address comes from a drop-in written by install.sh.
+[Unit]
+Description=Scale-to-zero listener for %i
+
+[Socket]
+Backlog=4096
+FreeBind=true
+
+[Install]
+WantedBy=sockets.target

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Wake: start the one service (its dependencies come up with it), then wait until it is healthy.
+set -euo pipefail
+cd "$COMPOSE_DIR"
+# shellcheck disable=SC2086 # COMPOSE_ARGS is a word list from the root-only env file
+docker compose $COMPOSE_ARGS up --detach --no-build "$SERVICE"
+for _ in $(seq "${START_TRIES:-120}"); do
+  curl --fail --silent --max-time 2 "$HEALTH_URL" >/dev/null && exit 0
+  sleep 1
+done
+echo "$SERVICE did not become healthy at $HEALTH_URL" >&2
+exit 1

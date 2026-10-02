@@ -1,0 +1,15 @@
+# Starts the service's container and returns only once it answers HEALTH_URL, so queued requests reach a ready app.
+# StopWhenUnneeded: when the proxy exits idle, nothing needs this unit and systemd stops it (and the container).
+[Unit]
+Description=Wake %i
+StopWhenUnneeded=true
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+EnvironmentFile=/etc/scale0/%i.env
+ExecStart=/usr/local/lib/scale0/up.sh
+ExecStop=/usr/local/lib/scale0/down.sh
+TimeoutStartSec=300

@@ -1,0 +1,15 @@
+# Proxies the held socket to the service once scale0-up@%i has it healthy, and exits after IDLE with no open
+# connection (an open WebSocket counts). Its exit leaves scale0-up@%i unneeded, which stops the container.
+[Unit]
+Description=Scale-to-zero proxy for %i
+Requires=scale0-up@%i.service scale0@%i.socket
+After=scale0-up@%i.service scale0@%i.socket
+
+[Service]
+EnvironmentFile=/etc/scale0/%i.env
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=${IDLE} ${TARGET}
+DynamicUser=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+NoNewPrivileges=true

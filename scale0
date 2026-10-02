@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# scale0: opt services on this host into scale-to-zero. A service sleeps (container stopped) after IDLE with no
+# connection and wakes on its next request, which waits in the socket's queue until the service is healthy.
+#   scale0 enable <name>    install services/<name>.env and start holding its address
+#   scale0 disable <name>   stop holding it (the service is left awake; point its bind back at LISTEN yourself)
+#   scale0 status           every opted-in service: awake or asleep, and since when
+#   scale0 wake|sleep <name>
+#   scale0 restart <name>   sleep then wake: deploys use it so a new image takes over
+#   scale0 managed <name>   exit 0 when <name> is opted in (for deploy scripts)
+set -euo pipefail
+REPO="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+CONF=/etc/scale0
+NAME_RE='^[a-z][a-z0-9-]{0,30}$'
+
+die() { echo "scale0: $*" >&2; exit 1; }
+need_name() { [[ "${1:-}" =~ $NAME_RE ]] || die "give a service name (${NAME_RE})"; }
+field() { sed -n "s/^$2=//p" "$CONF/$1.env" | tail -1; }
+
+enable() {
+  local name="$1" src="$REPO/services/$1.env"
+  [[ -f "$src" ]] || die "no $src: add the service's config to the repo first"
+  install -d -m 755 "$CONF" /usr/local/lib/scale0 "/etc/systemd/system/scale0@$name.socket.d"
+  install -m 600 "$src" "$CONF/$name.env"
+  local listen target
+  listen="$(field "$name" LISTEN)"; target="$(field "$name" TARGET)"
+  [[ "$listen" =~ ^[0-9.]+:[0-9]+$ && "$target" =~ ^[0-9.]+:[0-9]+$ ]] || die "LISTEN and TARGET must be ip:port"
+  [[ "$listen" != "$target" ]] || die "LISTEN and TARGET must differ: the service binds TARGET, scale0 holds LISTEN"
+  install -m 755 "$REPO/lib/up.sh" "$REPO/lib/down.sh" /usr/local/lib/scale0/
+  install -m 644 "$REPO"/units/scale0@.socket "$REPO"/units/scale0@.service "$REPO"/units/scale0-up@.service /etc/systemd/system/
+  printf '[Socket]\nListenStream=%s\n' "$listen" >"/etc/systemd/system/scale0@$name.socket.d/listen.conf"
+  systemctl daemon-reload
+  if ss -Hltn "( sport = :${listen##*:} )" | grep -q . && ! systemctl is-active --quiet "scale0@$name.socket"; then
+    die "$listen is still bound (the service itself?). Move its bind to $target, then run enable again"
+  fi
+  systemctl enable --now "scale0@$name.socket"
+  echo "$name: scale-to-zero on $listen → $target, sleeps after $(field "$name" IDLE) idle"
+}
+
+disable() {
+  systemctl disable --now "scale0@$1.socket" "scale0@$1.service" 2>/dev/null || true
+  echo "$1: no longer held; it stays as it is now ($(systemctl is-active "scale0-up@$1.service" || true))"
+}
+
+status() {
+  shopt -s nullglob
+  local f name state since
+  printf '%-14s %-8s %s\n' SERVICE STATE SINCE
+  for f in "$CONF"/*.env; do
+    name="$(basename "$f" .env)"
+    if ! systemctl is-active --quiet "scale0@$name.socket"; then state=off
+    elif systemctl is-active --quiet "scale0-up@$name.service"; then state=awake
+    else state=asleep; fi
+    since="$(systemctl show -p StateChangeTimestamp --value "scale0-up@$name.service")"
+    printf '%-14s %-8s %s\n' "$name" "$state" "${since:-–}"
+  done
+}
+
+cmd="${1:-status}"; shift || true
+case "$cmd" in
+  status) status ;;
+  enable) need_name "${1:-}"; enable "$1" ;;
+  disable) need_name "${1:-}"; disable "$1" ;;
+  wake) need_name "${1:-}"; systemctl start "scale0@$1.service" ;;
+  sleep) need_name "${1:-}"; systemctl stop "scale0@$1.service" "scale0-up@$1.service" ;;
+  restart) need_name "${1:-}"; systemctl stop "scale0@$1.service" "scale0-up@$1.service"; systemctl start "scale0@$1.service" ;;
+  managed) need_name "${1:-}"; systemctl is-enabled --quiet "scale0@$1.socket" ;;
+  *) die "unknown command: $cmd (enable, disable, status, wake, sleep, restart, managed)" ;;
+esac
