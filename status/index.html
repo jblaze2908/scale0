@@ -76,13 +76,15 @@ const $ = (id) => document.getElementById(id);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const mb = (n) => n == null ? "–" : `${Math.round(n).toLocaleString("en-US")} MB`;
 const dur = (s) => s == null ? "–" : s < 10 ? `${s.toFixed(1)} s` : s < 60 ? `${Math.round(s)} s` : s < 3600 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : s < 86400 ? `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min` : `${(s / 86400).toFixed(1)} d`;
+// systemd time spans ("20min", "1h30min") read better spaced: "20 min", "1 h 30 min".
+const span = (v) => v ? String(v).replace(/(\d)([a-z]+)/g, "$1 $2").replace(/([a-z])(\d)/g, "$1 $2") : "–";
 const LABEL = { awake: "Awake", waking: "Waking", asleep: "Asleep", failed: "Not healthy in time", off: "Not held" };
 let data = null, confirming = null, busy = new Set(), lastOk = 0;
 
 function headline(svcs) {
   if (!svcs.length) return "No services opted in yet.";
   const n = (s) => svcs.filter((x) => x.state === s).length;
-  const parts = [["awake", n("awake")], ["waking", n("waking")], ["asleep", n("asleep")]].filter(([, c]) => c).map(([s, c]) => `${c} ${s}`);
+  const parts = [["awake", n("awake")], ["waking", n("waking")], ["asleep", n("asleep")]].filter(([, c]) => c).map(([s, c], i) => i === 0 ? `${c} ${c === 1 ? "service" : "services"} ${s}` : `${c} ${s}`);
   const failed = svcs.filter((x) => x.state === "failed").map((x) => x.name);
   return `${parts.join(", ") || "Nothing running"}.${failed.length ? ` ${failed.join(", ")} didn’t wake.` : ""}`;
 }
@@ -119,9 +121,9 @@ function row(s) {
     <span class="name"><span class="dot ${esc(s.state)}"></span>${esc(s.name)}</span>
     <span class="cell${s.state === "failed" ? "" : " muted"}" ${s.state === "failed" ? `style="color:var(--signal)"` : ""}>${LABEL[s.state] || esc(s.state)}</span>
     <span class="cell num muted">${dur(s.since_s)}</span><span class="cell num r">${conns}</span><span class="cell num r">${memory}</span>
-    <span class="cell num r">${cold}</span><span class="cell num r muted">${esc(s.idle || "–")}</span>
+    <span class="cell num r">${cold}</span><span class="cell num r muted">${esc(span(s.idle))}</span>
     <span class="card-only muted" ${s.state === "failed" ? `style="color:var(--signal)"` : ""}>${LABEL[s.state] || esc(s.state)} · ${dur(s.since_s)}</span>
-    <span class="card-only facts"><span>Connections <b class="num">${s.state === "awake" ? s.connections : "–"}</b></span><span>Memory <b class="num">${s.state === "asleep" ? mb(s.last_memory_mb) + " freed" : mb(s.memory_mb)}</b></span><span>Cold start <b class="num">${cold}</b></span><span>Sleeps after <b class="num">${esc(s.idle || "–")}</b></span></span>
+    <span class="card-only facts"><span>Connections <b class="num">${s.state === "awake" ? s.connections : "–"}</b></span><span>Memory <b class="num">${s.state === "asleep" ? mb(s.last_memory_mb) + " freed" : mb(s.memory_mb)}</b></span><span>Cold start <b class="num">${cold}</b></span><span>Sleeps after <b class="num">${esc(span(s.idle))}</b></span></span>
     <span class="act">${action(s)}</span>${confirm}</div>`;
 }
 
