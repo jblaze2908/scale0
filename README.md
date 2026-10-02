@@ -38,10 +38,15 @@ the new image), and health-check through `LISTEN`, which also proves the wake pa
 
 ## Status page
 
-`scale0-status` (started by the first `enable`) serves a page on `172.17.0.1:8359` that polls every 2 s: each service
-awake, waking or asleep, since when, open connections, container memory and the last cold start (systemd's time from
-`scale0-up` starting to healthy). It is read-only and unprivileged, with no Docker socket. To view it:
-`ssh -L 8359:172.17.0.1:8359 host`, then http://localhost:8359. To put it on a domain, route it through Traefik behind SSO.
+`scale0-status` (started by the first `enable`) serves a page on `172.17.0.1:8359`, polling every 2 s: host memory
+(always on, awake under scale0, freed by sleep), and each service awake, waking, asleep or failed, since when, open
+connections, memory (last awake memory when asleep) and the last cold start (systemd's time from `scale0-up` starting
+to healthy). Wake and Sleep buttons act on one service; sleeping one with open connections asks first.
+
+It runs as the `scale0-status` system user with no Docker socket. `polkit/50-scale0.rules` lets that user start and
+stop `scale0@*` / `scale0-up@*` units and nothing else (restart included). Actions need the page's own `X-Scale0`
+header and a same-host Origin; on the host it sits behind SSO proxy at https://scale0.example.com. Design:
+Draft canvas "scale0 — Dashboard" (Engram's tokens).
 
 ## Install on a host
 

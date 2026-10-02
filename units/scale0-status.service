@@ -12,6 +12,8 @@ ExecStart=/usr/bin/python3 /opt/scale0/status/server.py
 # endpoint is not connected"), so every systemctl call failed and the page showed every service as off.
 User=scale0-status
 Group=scale0-status
+# remembers each service's last awake memory, so an asleep one can say what it frees
+StateDirectory=scale0-status
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true

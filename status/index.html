@@ -4,67 +4,172 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>scale0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-  :root { --bg: #fafaf9; --card: #fff; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4; --awake: #16a34a; --asleep: #a8a29e; --waking: #d97706; --off: #dc2626; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #0c0a09; --card: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #292524; --asleep: #57534e; } }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; }
-  main { max-width: 860px; margin: 0 auto; padding: 32px 16px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
-  .host { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; min-width: 150px; }
-  .tile b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
-  .tile span { color: var(--muted); font-size: 12px; }
-  .wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th { color: var(--muted); font-weight: 500; font-size: 12px; }
-  tr:last-child td { border-bottom: 0; }
-  td.num { font-variant-numeric: tabular-nums; }
-  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
-  .awake { background: var(--awake); } .asleep { background: var(--asleep); } .waking { background: var(--waking); } .off { background: var(--off); }
-  .empty, .err { padding: 20px; color: var(--muted); }
-  .err { color: var(--off); }
+  /* Engram's tokens (engram/app/web/src/theme.css, Pitcrew C1). Signal orange only ever means "needs you". */
+  :root { --ground:#0f0f12; --ground-deep:#0a0a0c; --surface:#18181d; --surface-2:#202026; --surface-3:#2b2b33; --line:#25252c; --line-2:#36363f;
+    --ink:#f0f0f3; --ink-2:#a9a9b4; --ink-3:#76767f; --btn:#f0f0f3; --on-btn:#111114; --signal:#ff6a3d; --in:#3ad483; --warn:#f2c14e; --data:#7196ff; color-scheme:dark; }
+  @media (prefers-color-scheme: light) { :root { --ground:#f1f1f4; --ground-deep:#e8e8ed; --surface:#fff; --surface-2:#f6f6f9; --surface-3:#e6e6ec; --line:#e3e3e9; --line-2:#cfcfd8;
+    --ink:#141418; --ink-2:#4a4a55; --ink-3:#80808b; --btn:#141418; --on-btn:#fff; --signal:#ff4f1f; --in:#0f9a5a; --warn:#b98300; --data:#2f63ff; color-scheme:light; } }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--ground); color:var(--ink); font:14px/1.5 "Geist", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
+  .mono, .num { font-family:"Geist Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+  main { max-width:1184px; margin:0 auto; padding:32px 48px 40px; display:flex; flex-direction:column; gap:24px; }
+  header { display:flex; justify-content:space-between; align-items:center; }
+  .brand { font:500 15px "Geist Mono", ui-monospace, monospace; } .brand small { font:13px "Geist", sans-serif; color:var(--ink-3); margin-left:10px; }
+  .live { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-3); } .live b { font-weight:400; color:var(--ink-2); }
+  h1 { font-size:26px; font-weight:600; letter-spacing:-0.02em; line-height:1.2; }
+  .lede { color:var(--ink-2); margin-top:6px; } .lede b { font-weight:400; color:var(--ink); }
+  .cd { border-radius:14px; background:var(--surface); border:1px solid var(--line); overflow:hidden; }
+  .cd-hot { background:color-mix(in srgb, var(--signal) 6%, var(--surface)); }
+  .hd { display:flex; justify-content:space-between; gap:12px; padding:14px 18px 10px; font-size:13px; color:var(--ink-3); }
+  .kv { display:flex; justify-content:space-between; gap:12px; padding:10px 18px; border-top:1px solid var(--line); font-size:13px; } .kv > :first-child { color:var(--ink-3); }
+  .dot { width:7px; height:7px; border-radius:50%; flex:none; display:inline-block; }
+  .awake { background:var(--in); box-shadow:0 0 0 3px color-mix(in srgb, var(--in) 18%, transparent); }
+  .waking { background:var(--warn); animation:pulse 1.1s ease-in-out infinite; }
+  .asleep, .off { background:transparent; box-shadow:inset 0 0 0 1.5px var(--ink-3); }
+  .failed { background:var(--signal); }
+  @keyframes pulse { 50% { opacity:.3; } }
+  .bar { display:flex; height:14px; border-radius:7px; overflow:hidden; gap:2px; background:var(--ground-deep); }
+  .bar > i { display:block; }
+  .k-on { background:var(--surface-3); } .k-in { background:var(--in); }
+  .freed { background:repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink-3) 45%, transparent) 0 5px, transparent 5px 10px); box-shadow:inset 0 0 0 1px var(--line-2); border-radius:3px; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px 24px; font-size:12.5px; color:var(--ink-2); margin-top:12px; }
+  .legend span { display:flex; align-items:center; gap:8px; } .legend b { font-weight:400; color:var(--ink); } .legend .sw { width:10px; height:10px; border-radius:3px; }
+  .legend .avail { margin-left:auto; }
+  .row { display:grid; grid-template-columns:1.4fr 1.3fr .9fr .8fr .9fr .8fr .8fr 120px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
+  .row.head { border-top:0; padding-top:0; font-size:12px; color:var(--ink-3); }
+  .row .r { text-align:right; } .row .name { display:flex; align-items:center; gap:12px; font-weight:500; } .muted { color:var(--ink-2); } .faint { color:var(--ink-3); }
+  .act { display:flex; justify-content:flex-end; gap:8px; }
+  .bt { display:inline-flex; align-items:center; justify-content:center; height:34px; padding:0 14px; border-radius:10px; font:500 13px "Geist", sans-serif; white-space:nowrap; border:0; cursor:pointer; background:none; color:var(--ink); }
+  .bt:disabled { opacity:.5; cursor:default; }
+  .bt-primary { background:var(--btn); color:var(--on-btn); } .bt-ghost { box-shadow:inset 0 0 0 1px var(--line-2); } .bt-ghost:hover { background:var(--surface-2); }
+  .bt-signal { box-shadow:inset 0 0 0 1px var(--signal); color:var(--signal); }
+  .confirm { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:16px; margin:10px -18px -11px; padding:12px 18px; background:var(--surface-2); border-top:1px solid var(--line); }
+  .confirm p { font-size:13px; } .confirm p span { color:var(--ink-2); }
+  .note { font-size:12.5px; color:var(--ink-3); }
+  .empty, .err { padding:16px 18px; border-top:1px solid var(--line); color:var(--ink-3); } .err { color:var(--signal); }
+  .card-only { display:none; }
+  @media (max-width:700px) {
+    main { padding:20px 16px 24px; gap:16px; } h1 { font-size:21px; }
+    .legend .avail { margin-left:0; }
+    .row.head { display:none; }
+    .row { display:flex; flex-wrap:wrap; gap:8px 12px; padding:12px 18px; }
+    .row .name { flex:1; } .row .cell { display:none; } .card-only { display:block; }
+    .row .facts { width:100%; display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12.5px; color:var(--ink-2); }
+    .act { width:100%; } .act .bt { flex:1; }
+    .confirm { flex-direction:column; align-items:stretch; } .confirm .act .bt { flex:1; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <h1>scale0</h1>
-  <div class="sub" id="sub">Services that sleep when idle and wake on their next request.</div>
-  <div class="host" id="host"></div>
-  <div class="wrap"><div id="list" class="empty">Loading…</div></div>
+  <header><span class="brand">scale0<small id="hostname">on the host</small></span><span class="live"><span class="dot awake" id="liveDot"></span><b id="liveText">Live</b><span id="updated"></span></span></header>
+  <div><h1 id="headline">Loading…</h1><p class="lede" id="lede"></p></div>
+  <section class="cd" id="memory"></section>
+  <section class="cd" id="services"><div class="hd"><span>Services</span></div></section>
+  <p class="note">Read from systemd every 2 seconds. Wake starts a service now. Sleep stops it and closes its open connections; its next request wakes it again.</p>
 </main>
 <script>
-const ago = (s) => s == null ? "–" : s < 60 ? `${Math.round(s)} s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${(s / 3600).toFixed(1)} h ago` : `${(s / 86400).toFixed(1)} d ago`;
-const esc = (v) => String(v ?? "–").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-function render(d) {
-  const h = d.host;
-  document.getElementById("host").innerHTML = [
-    [`${h.mem_available_mb} MB`, `available of ${h.mem_total_mb} MB`],
-    [h.load.join(" · "), "load 1 · 5 · 15 min"],
-    [`${d.services.filter((s) => s.state === "awake").length} / ${d.services.length}`, "services awake"],
-  ].map(([b, s]) => `<div class="tile"><b>${esc(b)}</b><span>${esc(s)}</span></div>`).join("");
-  const list = document.getElementById("list");
-  if (!d.services.length) { list.className = "empty"; list.textContent = "No services opted in yet."; return; }
-  list.className = "";
-  list.innerHTML = `<table><thead><tr><th>Service</th><th>State</th><th>Since</th><th>Connections</th><th>Memory</th><th>Last cold start</th><th>Sleeps after</th></tr></thead><tbody>${
-    d.services.map((s) => `<tr><td><b>${esc(s.name)}</b></td><td><span class="dot ${esc(s.state)}"></span>${esc(s.state)}</td><td>${ago(s.since_s)}</td>
-      <td class="num">${s.state === "awake" ? s.connections : "–"}</td><td class="num">${s.memory_mb == null ? "–" : `${s.memory_mb} MB`}</td>
-      <td class="num">${s.last_cold_start_s == null ? "–" : `${s.last_cold_start_s} s`}</td><td>${esc(s.idle)} idle</td></tr>`).join("")
-  }</tbody></table>`;
-  document.getElementById("sub").textContent = `Updated ${new Date(d.at * 1000).toLocaleTimeString()} · refreshes every 2 s`;
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const mb = (n) => n == null ? "–" : `${Math.round(n).toLocaleString("en-US")} MB`;
+const dur = (s) => s == null ? "–" : s < 10 ? `${s.toFixed(1)} s` : s < 60 ? `${Math.round(s)} s` : s < 3600 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : s < 86400 ? `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min` : `${(s / 86400).toFixed(1)} d`;
+const LABEL = { awake: "Awake", waking: "Waking", asleep: "Asleep", failed: "Not healthy in time", off: "Not held" };
+let data = null, confirming = null, busy = new Set(), lastOk = 0;
+
+function headline(svcs) {
+  if (!svcs.length) return "No services opted in yet.";
+  const n = (s) => svcs.filter((x) => x.state === s).length;
+  const parts = [["awake", n("awake")], ["waking", n("waking")], ["asleep", n("asleep")]].filter(([, c]) => c).map(([s, c]) => `${c} ${s}`);
+  const failed = svcs.filter((x) => x.state === "failed").map((x) => x.name);
+  return `${parts.join(", ") || "Nothing running"}.${failed.length ? ` ${failed.join(", ")} didn’t wake.` : ""}`;
 }
+
+function renderMemory(h, svcs) {
+  const awake = svcs.reduce((a, s) => a + (s.memory_mb || 0), 0);
+  const freed = svcs.filter((s) => s.state === "asleep").reduce((a, s) => a + (s.last_memory_mb || 0), 0);
+  const used = h.mem_total_mb - h.mem_available_mb, always = Math.max(0, used - awake);
+  const pct = (v) => `${(100 * v / h.mem_total_mb).toFixed(2)}%`;
+  $("lede").innerHTML = freed ? `Sleeping services are freeing about <b class="num">${mb(freed)}</b>. Each wakes on its next request, which waits until it is ready.` : "Each service wakes on its next request, which waits until it is ready.";
+  $("memory").innerHTML = `<div class="hd"><span>Memory on the host</span><span class="num">${mb(h.mem_total_mb)} total</span></div>
+    <div style="padding:0 18px 16px"><div class="bar"><i class="k-on" style="width:${pct(always)}"></i><i class="k-in" style="width:${pct(awake)}"></i>${freed ? `<i class="freed" style="width:${pct(freed)}"></i>` : ""}</div>
+    <div class="legend"><span><i class="sw k-on"></i>Always on <b class="num">${mb(always)}</b></span><span><i class="sw k-in"></i>Awake under scale0 <b class="num">${mb(awake)}</b></span>
+    <span><i class="sw freed"></i>Freed by sleep <b class="num">${mb(freed)}</b></span><span class="avail">Available <b class="num">${mb(h.mem_available_mb)}</b></span></div></div>
+    <div class="kv"><span>Load, 1 · 5 · 15 min</span><span class="num">${h.load.join(" · ")} <span class="faint">on ${h.cpus} vCPU</span></span></div>`;
+}
+
+function action(s) {
+  if (busy.has(s.name)) return `<button class="bt bt-ghost" disabled>${s.state === "awake" ? "Sleeping…" : "Waking…"}</button>`;
+  if (s.state === "awake") return `<button class="bt bt-ghost" data-act="sleep" data-name="${esc(s.name)}">Sleep</button>`;
+  if (s.state === "waking") return `<button class="bt bt-ghost" disabled>Waking…</button>`;
+  if (s.state === "failed") return `<button class="bt bt-signal" data-act="wake" data-name="${esc(s.name)}">Try again</button>`;
+  if (s.state === "asleep") return `<button class="bt bt-primary" data-act="wake" data-name="${esc(s.name)}">Wake</button>`;
+  return "";
+}
+
+function row(s) {
+  const memory = s.state === "asleep" ? (s.last_memory_mb ? `<span class="faint">${mb(s.last_memory_mb)} freed</span>` : "–") : mb(s.memory_mb);
+  const conns = s.state === "awake" ? s.connections : `<span class="faint">–</span>`;
+  const cold = s.last_cold_start_s == null ? "–" : `${s.last_cold_start_s.toFixed(2)} s`;
+  const confirm = confirming === s.name && s.state === "awake" ? `<div class="confirm"><p>Sleep ${esc(s.name)} now? <span>${s.connections} open connection${s.connections === 1 ? "" : "s"} will close. Its next request wakes it${s.last_cold_start_s ? ` in about ${Math.round(s.last_cold_start_s)} s` : ""}.</span></p>
+    <div class="act"><button class="bt bt-primary" data-act="sleep-now" data-name="${esc(s.name)}">Sleep now</button><button class="bt bt-ghost" data-act="keep">Keep awake</button></div></div>` : "";
+  return `<div class="row${s.state === "failed" ? " cd-hot" : ""}">
+    <span class="name"><span class="dot ${esc(s.state)}"></span>${esc(s.name)}</span>
+    <span class="cell${s.state === "failed" ? "" : " muted"}" ${s.state === "failed" ? `style="color:var(--signal)"` : ""}>${LABEL[s.state] || esc(s.state)}</span>
+    <span class="cell num muted">${dur(s.since_s)}</span><span class="cell num r">${conns}</span><span class="cell num r">${memory}</span>
+    <span class="cell num r">${cold}</span><span class="cell num r muted">${esc(s.idle || "–")}</span>
+    <span class="card-only muted" ${s.state === "failed" ? `style="color:var(--signal)"` : ""}>${LABEL[s.state] || esc(s.state)} · ${dur(s.since_s)}</span>
+    <span class="card-only facts"><span>Connections <b class="num">${s.state === "awake" ? s.connections : "–"}</b></span><span>Memory <b class="num">${s.state === "asleep" ? mb(s.last_memory_mb) + " freed" : mb(s.memory_mb)}</b></span><span>Cold start <b class="num">${cold}</b></span><span>Sleeps after <b class="num">${esc(s.idle || "–")}</b></span></span>
+    <span class="act">${action(s)}</span>${confirm}</div>`;
+}
+
+function render() {
+  if (!data) return;
+  const svcs = data.services;
+  $("headline").textContent = headline(svcs);
+  renderMemory(data.host, svcs);
+  $("services").innerHTML = `<div class="hd"><span>Services · ${svcs.length} opted in</span><span>Sleeps after no connection for the time shown</span></div>
+    ${svcs.length ? `<div class="row head"><span>Service</span><span>State</span><span>Since</span><span class="r">Connections</span><span class="r">Memory</span><span class="r">Cold start</span><span class="r">Sleeps after</span><span></span></div>${svcs.map(row).join("")}`
+      : `<div class="empty">No services opted in yet. Run <span class="mono">scale0 enable &lt;name&gt;</span> on the host.</div>`}`;
+}
+
+async function post(name, verb) {
+  busy.add(name); render();
+  try {
+    const r = await fetch(`/api/services/${encodeURIComponent(name)}/${verb}`, { method: "POST", headers: { "X-Scale0": "1" } });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+  } catch (e) { alertRow(`Couldn’t ${verb} ${name}: ${e.message}`); }
+  finally { setTimeout(() => { busy.delete(name); poll(); }, 600); }
+}
+function alertRow(text) { const el = document.createElement("div"); el.className = "err"; el.textContent = text; $("services").appendChild(el); setTimeout(() => el.remove(), 6000); }
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const { act, name } = b.dataset, s = data?.services.find((x) => x.name === name);
+  if (act === "wake") post(name, "wake");
+  else if (act === "sleep") { if (s && s.connections > 0) { confirming = name; render(); } else post(name, "sleep"); }
+  else if (act === "sleep-now") { confirming = null; post(name, "sleep"); }
+  else if (act === "keep") { confirming = null; render(); }
+});
+
+let timer = null;
 async function poll() {
+  clearTimeout(timer);
   try {
     const r = await fetch("/api/status", { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
-    render(await r.json());
+    data = await r.json(); lastOk = Date.now();
+    $("liveDot").className = "dot awake"; $("liveText").textContent = "Live";
+    render();
   } catch {
-    const list = document.getElementById("list");
-    list.className = "err"; list.textContent = "Can't reach the status service. Retrying…";
-  } finally { setTimeout(poll, 2000); }
+    $("liveDot").className = "dot failed"; $("liveText").textContent = "Can’t reach the host";
+  }
+  timer = setTimeout(poll, 2000);
 }
+setInterval(() => { if (lastOk) $("updated").textContent = `· updated ${Math.max(0, Math.round((Date.now() - lastOk) / 1000))} s ago`; }, 500);
 poll();
 </script>
 </body>

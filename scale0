@@ -36,6 +36,8 @@ enable() {
   systemctl enable --now "scale0@$name.socket"
   # files only: a running DynamicUser of the same name would satisfy a plain id check
   getent -s files passwd scale0-status >/dev/null || useradd --system --no-create-home --shell /usr/sbin/nologin scale0-status
+  # lets the status page's user start and stop scale0's own units (the dashboard's wake and sleep buttons)
+  install -d -m 755 /etc/polkit-1/rules.d && install -m 644 "$REPO/polkit/50-scale0.rules" /etc/polkit-1/rules.d/
   systemctl enable --now scale0-status.service
   echo "$name: scale-to-zero on $listen → $target, sleeps after $(field "$name" IDLE) idle"
 }

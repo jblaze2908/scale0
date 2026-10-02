@@ -1,0 +1,8 @@
+// The status page's user may start and stop scale0's own units, nothing else: wake and sleep from the dashboard
+// without running the page as root. Installed by `scale0 enable` into /etc/polkit-1/rules.d/.
+polkit.addRule(function (action, subject) {
+  if (action.id !== "org.freedesktop.systemd1.manage-units" || subject.user !== "scale0-status") return polkit.Result.NOT_HANDLED;
+  var unit = action.lookup("unit"), verb = action.lookup("verb");
+  if (/^scale0(-up)?@[a-z][a-z0-9-]{0,30}\.service$/.test(unit) && (verb === "start" || verb === "stop")) return polkit.Result.YES;
+  return polkit.Result.NOT_HANDLED;
+});
