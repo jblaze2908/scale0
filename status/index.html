@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scale0</title>
+<style>
+  :root { --bg: #fafaf9; --card: #fff; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4; --awake: #16a34a; --asleep: #a8a29e; --waking: #d97706; --off: #dc2626; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0c0a09; --card: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #292524; --asleep: #57534e; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .host { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; min-width: 150px; }
+  .tile b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .tile span { color: var(--muted); font-size: 12px; }
+  .wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+  .awake { background: var(--awake); } .asleep { background: var(--asleep); } .waking { background: var(--waking); } .off { background: var(--off); }
+  .empty, .err { padding: 20px; color: var(--muted); }
+  .err { color: var(--off); }
+</style>
+</head>
+<body>
+<main>
+  <h1>scale0</h1>
+  <div class="sub" id="sub">Services that sleep when idle and wake on their next request.</div>
+  <div class="host" id="host"></div>
+  <div class="wrap"><div id="list" class="empty">Loading…</div></div>
+</main>
+<script>
+const ago = (s) => s == null ? "–" : s < 60 ? `${Math.round(s)} s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${(s / 3600).toFixed(1)} h ago` : `${(s / 86400).toFixed(1)} d ago`;
+const esc = (v) => String(v ?? "–").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function render(d) {
+  const h = d.host;
+  document.getElementById("host").innerHTML = [
+    [`${h.mem_available_mb} MB`, `available of ${h.mem_total_mb} MB`],
+    [h.load.join(" · "), "load 1 · 5 · 15 min"],
+    [`${d.services.filter((s) => s.state === "awake").length} / ${d.services.length}`, "services awake"],
+  ].map(([b, s]) => `<div class="tile"><b>${esc(b)}</b><span>${esc(s)}</span></div>`).join("");
+  const list = document.getElementById("list");
+  if (!d.services.length) { list.className = "empty"; list.textContent = "No services opted in yet."; return; }
+  list.className = "";
+  list.innerHTML = `<table><thead><tr><th>Service</th><th>State</th><th>Since</th><th>Connections</th><th>Memory</th><th>Last cold start</th><th>Sleeps after</th></tr></thead><tbody>${
+    d.services.map((s) => `<tr><td><b>${esc(s.name)}</b></td><td><span class="dot ${esc(s.state)}"></span>${esc(s.state)}</td><td>${ago(s.since_s)}</td>
+      <td class="num">${s.state === "awake" ? s.connections : "–"}</td><td class="num">${s.memory_mb == null ? "–" : `${s.memory_mb} MB`}</td>
+      <td class="num">${s.last_cold_start_s == null ? "–" : `${s.last_cold_start_s} s`}</td><td>${esc(s.idle)} idle</td></tr>`).join("")
+  }</tbody></table>`;
+  document.getElementById("sub").textContent = `Updated ${new Date(d.at * 1000).toLocaleTimeString()} · refreshes every 2 s`;
+}
+async function poll() {
+  try {
+    const r = await fetch("/api/status", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    render(await r.json());
+  } catch {
+    const list = document.getElementById("list");
+    list.className = "err"; list.textContent = "Can't reach the status service. Retrying…";
+  } finally { setTimeout(poll, 2000); }
+}
+poll();
+</script>
+</body>
+</html>

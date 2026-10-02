@@ -20,19 +20,21 @@ enable() {
   local name="$1" src="$REPO/services/$1.env"
   [[ -f "$src" ]] || die "no $src: add the service's config to the repo first"
   install -d -m 755 "$CONF" /usr/local/lib/scale0 "/etc/systemd/system/scale0@$name.socket.d"
-  install -m 600 "$src" "$CONF/$name.env"
+  # 644: no secrets here (COMPOSE_ARGS names the env file, it does not hold it), and the status page reads it
+  install -m 644 "$src" "$CONF/$name.env"
   local listen target
   listen="$(field "$name" LISTEN)"; target="$(field "$name" TARGET)"
   [[ "$listen" =~ ^[0-9.]+:[0-9]+$ && "$target" =~ ^[0-9.]+:[0-9]+$ ]] || die "LISTEN and TARGET must be ip:port"
   [[ "$listen" != "$target" ]] || die "LISTEN and TARGET must differ: the service binds TARGET, scale0 holds LISTEN"
   install -m 755 "$REPO/lib/up.sh" "$REPO/lib/down.sh" /usr/local/lib/scale0/
-  install -m 644 "$REPO"/units/scale0@.socket "$REPO"/units/scale0@.service "$REPO"/units/scale0-up@.service /etc/systemd/system/
+  install -m 644 "$REPO"/units/scale0@.socket "$REPO"/units/scale0@.service "$REPO"/units/scale0-up@.service "$REPO"/units/scale0-status.service /etc/systemd/system/
   printf '[Socket]\nListenStream=%s\n' "$listen" >"/etc/systemd/system/scale0@$name.socket.d/listen.conf"
   systemctl daemon-reload
   if ss -Hltn "( sport = :${listen##*:} )" | grep -q . && ! systemctl is-active --quiet "scale0@$name.socket"; then
     die "$listen is still bound (the service itself?). Move its bind to $target, then run enable again"
   fi
   systemctl enable --now "scale0@$name.socket"
+  systemctl enable --now scale0-status.service
   echo "$name: scale-to-zero on $listen → $target, sleeps after $(field "$name" IDLE) idle"
 }
 

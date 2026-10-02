@@ -1,0 +1,23 @@
+# The status page: read-only, unprivileged, no Docker socket. Bound host-local; reach it through Traefik with SSO or an
+# SSH tunnel (ssh -L 8359:172.17.0.1:8359 host).
+[Unit]
+Description=scale0 status page
+After=network.target
+
+[Service]
+Environment=SCALE0_STATUS_BIND=172.17.0.1
+Environment=SCALE0_STATUS_PORT=8359
+ExecStart=/usr/bin/python3 /opt/scale0/status/server.py
+DynamicUser=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=false
+RestrictAddressFamilies=AF_INET AF_UNIX AF_NETLINK
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

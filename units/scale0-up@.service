@@ -10,6 +10,7 @@ Requires=docker.service
 Type=oneshot
 RemainAfterExit=true
 EnvironmentFile=/etc/scale0/%i.env
+Environment=NAME=%i
 ExecStart=/usr/local/lib/scale0/up.sh
 ExecStop=/usr/local/lib/scale0/down.sh
 TimeoutStartSec=300

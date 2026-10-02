@@ -4,6 +4,10 @@ set -euo pipefail
 cd "$COMPOSE_DIR"
 # shellcheck disable=SC2086 # COMPOSE_ARGS is a word list from the root-only env file
 docker compose $COMPOSE_ARGS up --detach --no-build "$SERVICE"
+# The container id, so the status page can read its memory from the cgroup without the Docker socket.
+install -d -m 755 /run/scale0
+docker compose $COMPOSE_ARGS ps -q "$SERVICE" >"/run/scale0/$NAME.cid"
+chmod 644 "/run/scale0/$NAME.cid"
 for _ in $(seq "${START_TRIES:-120}"); do
   curl --fail --silent --max-time 2 "$HEALTH_URL" >/dev/null && exit 0
   sleep 1
