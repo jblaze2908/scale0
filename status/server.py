@@ -8,6 +8,7 @@ Per poll: one `systemctl show` and one `ss` per service, cached for a second acr
 import json
 import os
 import re
+import socket
 import subprocess
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -143,6 +144,7 @@ def host() -> dict:
         key, value = line.split(":", 1)
         info[key] = int(value.split()[0])
     return {
+        "name": socket.gethostname(),
         "mem_total_mb": info["MemTotal"] // 1024,
         "mem_available_mb": info["MemAvailable"] // 1024,
         "load": Path("/proc/loadavg").read_text().split()[:3],
@@ -236,7 +238,7 @@ class Handler(BaseHTTPRequestHandler):
         if not match:
             return self.reply(404, "text/plain", b"not found")
         # Only this page may act: its own header (a form or a cross-site fetch can't set it without a preflight we
-        # never answer) and, when the browser sends one, an Origin on this host. the SSO proxy's SSO is in front of both.
+        # never answer) and, when the browser sends one, an Origin on this host. Put an SSO proxy in front if the page is reachable beyond the host.
         origin = self.headers.get("Origin")
         if self.headers.get("X-Scale0") != "1" or (origin and urlparse(origin).netloc != self.headers.get("Host")):
             return self.reply(403, "application/json", b'{"error":"refused"}')

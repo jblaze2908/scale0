@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-  /* Engram's tokens (engram/app/web/src/theme.css, Pitcrew C1). Signal orange only ever means "needs you". */
+  /* Signal orange only ever means "needs you". */
   :root { --ground:#0f0f12; --ground-deep:#0a0a0c; --surface:#18181d; --surface-2:#202026; --surface-3:#2b2b33; --line:#25252c; --line-2:#36363f;
     --ink:#f0f0f3; --ink-2:#a9a9b4; --ink-3:#76767f; --btn:#f0f0f3; --on-btn:#111114; --signal:#ff6a3d; --in:#3ad483; --warn:#f2c14e; --data:#7196ff; color-scheme:dark; }
   @media (prefers-color-scheme: light) { :root { --ground:#f1f1f4; --ground-deep:#e8e8ed; --surface:#fff; --surface-2:#f6f6f9; --surface-3:#e6e6ec; --line:#e3e3e9; --line-2:#cfcfd8;
@@ -79,7 +79,7 @@
 </head>
 <body>
 <main>
-  <header><span style="display:flex;align-items:center"><span class="brand">scale0<small id="hostname">on the host</small></span><nav class="tabs"><a href="#/services" id="tab-services">Services</a><a href="#/deploys" id="tab-deploys">Deploys</a></nav></span><span class="live"><span class="dot awake" id="liveDot"></span><b id="liveText">Live</b><span id="updated"></span></span></header>
+  <header><span style="display:flex;align-items:center"><span class="brand">scale0<small id="hostname"></small></span><nav class="tabs"><a href="#/services" id="tab-services">Services</a><a href="#/deploys" id="tab-deploys">Deploys</a></nav></span><span class="live"><span class="dot awake" id="liveDot"></span><b id="liveText">Live</b><span id="updated"></span></span></header>
   <div id="view-services" style="display:contents">
   <div><h1 id="headline">Loading…</h1><p class="lede" id="lede"></p></div>
   <section class="cd" id="memory"></section>
@@ -107,12 +107,13 @@ function headline(svcs) {
 }
 
 function renderMemory(h, svcs) {
+  if (h.name) $("hostname").textContent = `on ${h.name}`;
   const awake = svcs.reduce((a, s) => a + (s.memory_mb || 0), 0);
   const freed = svcs.filter((s) => s.state === "asleep").reduce((a, s) => a + (s.last_memory_mb || 0), 0);
   const used = h.mem_total_mb - h.mem_available_mb, always = Math.max(0, used - awake);
   const pct = (v) => `${(100 * v / h.mem_total_mb).toFixed(2)}%`;
   $("lede").innerHTML = freed ? `Sleeping services are freeing about <b class="num">${mb(freed)}</b>. Each wakes on its next request, which waits until it is ready.` : "Each service wakes on its next request, which waits until it is ready.";
-  $("memory").innerHTML = `<div class="hd"><span>Memory on the host</span><span class="num">${mb(h.mem_total_mb)} total</span></div>
+  $("memory").innerHTML = `<div class="hd"><span>Memory on ${esc(h.name || "this host")}</span><span class="num">${mb(h.mem_total_mb)} total</span></div>
     <div style="padding:0 18px 16px"><div class="bar"><i class="k-on" style="width:${pct(always)}"></i><i class="k-in" style="width:${pct(awake)}"></i>${freed ? `<i class="freed" style="width:${pct(freed)}"></i>` : ""}</div>
     <div class="legend"><span><i class="sw k-on"></i>Always on <b class="num">${mb(always)}</b></span><span><i class="sw k-in"></i>Awake under scale0 <b class="num">${mb(awake)}</b></span>
     <span><i class="sw freed"></i>Freed by sleep <b class="num">${mb(freed)}</b></span><span class="avail">Available <b class="num">${mb(h.mem_available_mb)}</b></span></div></div>

@@ -6,7 +6,10 @@
 set -euo pipefail
 cd /opt/scale0
 G=(git -c safe.directory=/opt/scale0)
-export GIT_SSH_COMMAND="ssh -i /root/.ssh/scale0_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+# A private fork fetches over a read-only deploy key; a public https remote needs none.
+KEY="${SCALE0_DEPLOY_KEY:-/root/.ssh/scale0_deploy}"
+[[ -f "$KEY" ]] && export GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+STATUS_URL="${SCALE0_STATUS_URL:-http://172.17.0.1:8359}"
 notify() {
   [[ -f /etc/scale0/ntfy.env ]] || return 0
   local url token; url="$(sed -n 's/^NTFY_URL=//p' /etc/scale0/ntfy.env)"; token="$(sed -n 's/^NTFY_TOKEN=//p' /etc/scale0/ntfy.env)"
@@ -46,7 +49,7 @@ install_from_checkout() {
   systemctl restart scale0-status.service
 }
 proven() {
-  for _ in $(seq 20); do curl -fs -m 2 -o /dev/null http://172.17.0.1:8359/api/status && python3 lib/deployer.py status >/dev/null && return 0; sleep 1; done
+  for _ in $(seq 20); do curl -fs -m 2 -o /dev/null "$STATUS_URL/api/status" && python3 lib/deployer.py status >/dev/null && return 0; sleep 1; done
   return 1
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scale0: opt services on this host into scale-to-zero. A service sleeps (container stopped) after IDLE with no
 # connection and wakes on its next request, which waits in the socket's queue until the service is healthy.
-#   scale0 enable <name>    install services/<name>.env and start holding its address
+#   scale0 enable <name>    hold the address in /etc/scale0/<name>.env (copy examples/service.env)
 #   scale0 disable <name>   stop holding it (the service is left awake; point its bind back at LISTEN yourself)
 #   scale0 status           every opted-in service: awake or asleep, and since when
 #   scale0 wake|sleep <name>
@@ -19,11 +19,11 @@ need_name() { [[ "${1:-}" =~ $NAME_RE ]] || die "give a service name (${NAME_RE}
 field() { sed -n "s/^$2=//p" "$CONF/$1.env" | tail -1; }
 
 enable() {
-  local name="$1" src="$REPO/services/$1.env"
-  [[ -f "$src" ]] || die "no $src: add the service's config to the repo first"
-  install -d -m 755 "$CONF" /usr/local/lib/scale0 "/etc/systemd/system/scale0@$name.socket.d"
+  local name="$1"
+  [[ -f "$CONF/$name.env" ]] || die "no $CONF/$name.env: copy $REPO/examples/service.env there and fill it in"
+  install -d -m 755 /usr/local/lib/scale0 "/etc/systemd/system/scale0@$name.socket.d"
   # 644: no secrets here (COMPOSE_ARGS names the env file, it does not hold it), and the status page reads it
-  install -m 644 "$src" "$CONF/$name.env"
+  chmod 644 "$CONF/$name.env"
   local listen target
   listen="$(field "$name" LISTEN)"; target="$(field "$name" TARGET)"
   [[ "$listen" =~ ^[0-9.]+:[0-9]+$ && "$target" =~ ^[0-9.]+:[0-9]+$ ]] || die "LISTEN and TARGET must be ip:port"
