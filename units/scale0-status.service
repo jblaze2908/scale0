@@ -1,12 +1,13 @@
 # The status page: read-only, unprivileged, no Docker socket. Bound host-local; reach it through Traefik with SSO or an
-# SSH tunnel (ssh -L 8359:172.17.0.1:8359 <host>).
+# SSH tunnel. Bind and port: SCALE0_STATUS_BIND / SCALE0_STATUS_PORT in /etc/scale0/scale0.conf.
 [Unit]
 Description=scale0 status page
 After=network.target
 
 [Service]
-Environment=SCALE0_STATUS_BIND=172.17.0.1
+Environment=SCALE0_STATUS_BIND=127.0.0.1
 Environment=SCALE0_STATUS_PORT=8359
+EnvironmentFile=-/etc/scale0/scale0.conf
 ExecStart=/usr/bin/python3 /opt/scale0/status/server.py
 # A fixed system user (made by `scale0 enable`), not DynamicUser: D-Bus has refused dynamic users on some hosts ("Transport
 # endpoint is not connected"), so every systemctl call failed and the page showed every service as off.

@@ -40,7 +40,7 @@ def shim(name: str, body: str) -> None:
     p.chmod(0o755)
 
 
-# docker compose ps lists what tests say is running; everything else succeeds. scale0 managed draft = yes.
+# docker compose ps lists what tests say is running; everything else succeeds. scale0 managed web = yes.
 shim("docker", f'if [[ "$*" == *" ps --services --status running"* ]]; then cat {TMP}/running 2>/dev/null; fi; exit 0')
 shim("scale0", 'if [[ "$1" == managed ]]; then [[ "$2" == web ]]; exit; fi; exit 0')
 os.environ["PATH"] = f"{TMP / 'bin'}:{os.environ['PATH']}"

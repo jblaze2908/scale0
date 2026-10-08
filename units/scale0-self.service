@@ -6,5 +6,6 @@ After=network-online.target
 
 [Service]
 Type=oneshot
+EnvironmentFile=-/etc/scale0/scale0.conf
 ExecStart=/opt/scale0/lib/self-update.sh
 TimeoutStartSec=40min

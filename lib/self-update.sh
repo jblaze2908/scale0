@@ -6,10 +6,13 @@
 set -euo pipefail
 cd /opt/scale0
 G=(git -c safe.directory=/opt/scale0)
-# A private fork fetches over a read-only deploy key; a public https remote needs none.
-KEY="${SCALE0_DEPLOY_KEY:-/root/.ssh/scale0_deploy}"
-[[ -f "$KEY" ]] && export GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
-STATUS_URL="${SCALE0_STATUS_URL:-http://172.17.0.1:8359}"
+# Settings come from /etc/scale0/scale0.conf via the unit. A private remote fetches over a read-only deploy key;
+# a public https remote needs none.
+if [[ -n "${SCALE0_DEPLOY_KEY:-}" ]]; then
+  [[ -f "$SCALE0_DEPLOY_KEY" ]] || { echo "SCALE0_DEPLOY_KEY: no such file" >&2; exit 1; }
+  export GIT_SSH_COMMAND="ssh -i $SCALE0_DEPLOY_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+fi
+STATUS_URL="${SCALE0_STATUS_URL:-http://${SCALE0_STATUS_BIND:-127.0.0.1}:${SCALE0_STATUS_PORT:-8359}}"
 notify() {
   [[ -f /etc/scale0/ntfy.env ]] || return 0
   local url token; url="$(sed -n 's/^NTFY_URL=//p' /etc/scale0/ntfy.env)"; token="$(sed -n 's/^NTFY_TOKEN=//p' /etc/scale0/ntfy.env)"

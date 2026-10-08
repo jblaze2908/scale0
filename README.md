@@ -28,12 +28,12 @@ reverse proxy (Traefik, Caddy, nginx) already in front of your services. Run sca
 ## Install
 
 ```
-git clone https://github.com/jblaze2908/scale0.git /opt/scale0
+git clone <repo-url> /opt/scale0
 ln -sf /opt/scale0/scale0 /usr/local/bin/scale0
 scale0 status
 ```
 
-The units expect the checkout at `/opt/scale0`.
+The units expect the checkout at `/opt/scale0`. Any host: see [docs/deploy.md](docs/deploy.md).
 
 ## Opting a service in
 
@@ -55,16 +55,16 @@ the new image), and health-check through `LISTEN`, which also proves the wake pa
 
 ## Status page
 
-`scale0-status` (started by the first `enable`) serves a page on `172.17.0.1:8359`, polling every 2 s: host memory
+`scale0-status` (started by the first `enable`) serves a page on `127.0.0.1:8359`, polling every 2 s: host memory
 (always on, awake under scale0, freed by sleep), and each service awake, waking, asleep or failed, since when, open
 connections, memory (last awake memory when asleep) and the last cold start (systemd's time from `scale0-up` starting
 to healthy). Wake and Sleep buttons act on one service; sleeping one with open connections asks first.
 
 It runs as the `scale0-status` system user with no Docker socket. `polkit/50-scale0.rules` lets that user start and
 stop `scale0@*` / `scale0-up@*` units and nothing else (restart included). Actions need the page's own `X-Scale0`
-header and a same-host Origin. Reach it over an SSH tunnel (`ssh -L 8359:172.17.0.1:8359 <host>`), or route it through
+header and a same-host Origin. Reach it over an SSH tunnel (`ssh -L 8359:127.0.0.1:8359 <host>`), or route it through
 your reverse proxy behind SSO; the page itself has no login. Change the bind with `SCALE0_STATUS_BIND` /
-`SCALE0_STATUS_PORT` in `units/scale0-status.service`.
+`SCALE0_STATUS_PORT` in `/etc/scale0/scale0.conf` (see `examples/scale0.conf`).
 
 ## Deploys
 
@@ -82,7 +82,7 @@ scale0's own to `/etc/scale0/ntfy.env` (`NTFY_URL`, `NTFY_TOKEN`).
 ### Who deploys the deployer
 
 `lib/self-update.sh` (`scale0-self.timer`, every 5 min) and nothing else: fetch main (over the read-only key in
-`SCALE0_DEPLOY_KEY`, default `/root/.ssh/scale0_deploy`, when it exists), check the candidate in a scratch worktree (compile, `bash -n`, `tests/test_deployer.py`), wait for every app's deploy
+`SCALE0_DEPLOY_KEY` when set), check the candidate in a scratch worktree (compile, `bash -n`, `tests/test_deployer.py`), wait for every app's deploy
 lock, switch, reinstall units and the polkit rule, restart the page, and prove it answers. Any failure keeps or restores
 the last good commit and alerts. The deployer has no daemon, so a switch never interrupts it. By hand, always:
 `git -C /opt/scale0 checkout <good>`. Enable it with `systemctl enable --now scale0-self.timer` once the units are
