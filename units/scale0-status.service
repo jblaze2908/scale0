@@ -2,7 +2,8 @@
 # SSH tunnel. Bind and port: SCALE0_STATUS_BIND / SCALE0_STATUS_PORT in /etc/scale0/scale0.conf.
 [Unit]
 Description=scale0 status page
-After=network.target
+# SCALE0_STATUS_BIND may be a Docker bridge address (172.17.0.1), which exists only once Docker is up.
+After=network.target docker.service
 
 [Service]
 Environment=SCALE0_STATUS_BIND=127.0.0.1
@@ -24,6 +25,7 @@ ProtectKernelTunables=true
 ProtectControlGroups=false
 RestrictAddressFamilies=AF_INET AF_UNIX AF_NETLINK
 Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
