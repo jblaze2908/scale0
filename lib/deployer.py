@@ -148,6 +148,16 @@ def subject(run: Run, app: App, commit: str) -> str:
         return ""
 
 
+def ahead(run: Run, app: App, deployed: str, target: str) -> int | None:
+    """Commits on the branch that aren't live yet, for the page; None when it can't say (nothing live, history rewritten)."""
+    if not deployed or deployed == target:
+        return 0 if deployed else None
+    try:
+        return int(git(run, app, "rev-list", "--count", f"{deployed}..{target}"))
+    except (subprocess.CalledProcessError, ValueError):
+        return None
+
+
 # ---------- the deploy steps ----------
 def scaled(name: str) -> bool:
     return subprocess.run(["scale0", "managed", name], capture_output=True).returncode == 0
@@ -294,7 +304,7 @@ def run(name: str, force: bool = False) -> int:
             st["deployed"] = {"commit": deployed, "subject": subject(r, app, deployed), "picked_at": None, "live_at": None, "build_s": None, "how": "imported"}
             st["releases"] = [{"commit": deployed, "subject": st["deployed"]["subject"], "live_at": None, "build_s": None, "status": "serving"}]
             event(st, "imported", f"took over {deployed[:8]} from the old deploy script", deployed)
-    st["head"] = {"commit": target, "subject": subject(r, app, target), "checked_at": time.time()}
+    st["head"] = {"commit": target, "subject": subject(r, app, target), "checked_at": time.time(), "ahead": ahead(r, app, deployed, target)}
     st["last_check_at"] = time.time()
     quiet = (target == deployed and settled(r, app)) or (not force and (st.get("failed", {}).get("commit") == target or st.get("hold") == target))
     if quiet and not force:

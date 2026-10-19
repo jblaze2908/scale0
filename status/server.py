@@ -152,6 +152,24 @@ def host() -> dict:
     }
 
 
+def own_version() -> dict:
+    """The scale0 commit this page runs from, when the checkout last moved, and a newer commit that failed its checks
+    (lib/self-update.sh). Read from files: git refuses a repo owned by another user."""
+    repo = Path(__file__).resolve().parent.parent / ".git"
+    try:
+        head = (repo / "HEAD").read_text().strip()
+        if head.startswith("ref: "):
+            head = (repo / head[5:]).read_text().strip()
+        updated = (repo / "HEAD").stat().st_mtime
+    except OSError:
+        return {}
+    try:
+        failed = Path("/var/lib/scale0-self/failed").read_text().strip() or None
+    except OSError:
+        failed = None
+    return {"commit": head if SHA_RE.match(head) else None, "updated_at": updated, "failed": failed if failed and SHA_RE.match(failed) else None}
+
+
 def services() -> list[dict]:
     return [service(p) for p in sorted(CONF.glob("*.env")) if NAME_RE.match(p.stem)]
 
@@ -160,7 +178,7 @@ def status() -> bytes:
     now = time.monotonic()
     if now - _cache["at"] < 1:
         return _cache["body"]
-    body = json.dumps({"at": time.time(), "host": host(), "services": services()}).encode()
+    body = json.dumps({"at": time.time(), "host": host(), "services": services(), "scale0": own_version()}).encode()
     _cache.update(at=now, body=body)
     return body
 

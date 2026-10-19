@@ -22,9 +22,12 @@ notify() {
 "${G[@]}" fetch -q --prune origin main
 target="$("${G[@]}" rev-parse origin/main)"
 current="$("${G[@]}" rev-parse HEAD)"
+# Readable, so the status page can say when a new commit failed its checks; check.log stays root-only.
+chmod 755 /var/lib/scale0-self 2>/dev/null || true
 [[ "$target" == "$current" ]] && exit 0
 [[ "$(cat /var/lib/scale0-self/failed 2>/dev/null || true)" == "$target" ]] && exit 0
-install -d -m 700 /var/lib/scale0-self
+install -d -m 755 /var/lib/scale0-self
+install -m 600 /dev/null /var/lib/scale0-self/check.log
 short="${target:0:8}"
 
 # 1. Check the candidate where it can't hurt anything.

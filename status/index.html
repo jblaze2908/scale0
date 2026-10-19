@@ -18,6 +18,7 @@
   main { max-width:1184px; margin:0 auto; padding:32px 48px 40px; display:flex; flex-direction:column; gap:24px; }
   header { display:flex; justify-content:space-between; align-items:center; }
   .brand { font:500 15px "Geist Mono", ui-monospace, monospace; } .brand small { font:13px "Geist", sans-serif; color:var(--ink-3); margin-left:10px; }
+  .top { display:flex; align-items:center; gap:12px; }
   .live { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-3); } .live b { font-weight:400; color:var(--ink-2); }
   h1 { font-size:26px; font-weight:600; letter-spacing:-0.02em; line-height:1.2; }
   .lede { color:var(--ink-2); margin-top:6px; } .lede b { font-weight:400; color:var(--ink); }
@@ -38,7 +39,7 @@
   .legend { display:flex; flex-wrap:wrap; gap:8px 24px; font-size:12.5px; color:var(--ink-2); margin-top:12px; }
   .legend span { display:flex; align-items:center; gap:8px; } .legend b { font-weight:400; color:var(--ink); } .legend .sw { width:10px; height:10px; border-radius:3px; }
   .legend .avail { margin-left:auto; }
-  .row { display:grid; grid-template-columns:1.4fr 1.3fr .9fr .8fr .9fr .8fr .8fr 120px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
+  .row { display:grid; grid-template-columns:150px minmax(0,1fr) 120px 120px 120px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
   .row.head { border-top:0; padding-top:0; font-size:12px; color:var(--ink-3); }
   .row .r { text-align:right; } .row .name { display:flex; align-items:center; gap:12px; font-weight:500; } .muted { color:var(--ink-2); } .faint { color:var(--ink-3); }
   .act { display:flex; justify-content:flex-end; gap:8px; }
@@ -46,25 +47,31 @@
   .bt:disabled { opacity:.5; cursor:default; }
   .bt-primary { background:var(--btn); color:var(--on-btn); } .bt-ghost { box-shadow:inset 0 0 0 1px var(--line-2); } .bt-ghost:hover { background:var(--surface-2); }
   .bt-signal { box-shadow:inset 0 0 0 1px var(--signal); color:var(--signal); }
+  .bt-quiet { color:var(--ink-2); text-decoration:none; padding:0 10px; } .bt-quiet:hover { color:var(--ink); }
   .confirm { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:16px; margin:10px -18px -11px; padding:12px 18px; background:var(--surface-2); border-top:1px solid var(--line); }
   .confirm p { font-size:13px; } .confirm p span { color:var(--ink-2); }
-  .note { font-size:12.5px; color:var(--ink-3); }
+  .note { font-size:12.5px; color:var(--ink-2); }
   .empty, .err { padding:16px 18px; border-top:1px solid var(--line); color:var(--ink-3); } .err { color:var(--signal); }
   .card-only { display:none; }
   nav.tabs { display:flex; gap:4px; margin-left:20px; } nav.tabs a { height:32px; padding:0 12px; border-radius:9px; font-size:13px; color:var(--ink-3); display:inline-flex; align-items:center; text-decoration:none; }
   nav.tabs a.on { background:var(--surface); color:var(--ink); box-shadow:inset 0 0 0 1px var(--line); }
   .sha { font:12.5px "Geist Mono", ui-monospace, monospace; color:var(--ink); background:var(--surface-2); padding:1px 6px; border-radius:6px; }
-  .dep { display:grid; grid-template-columns:.9fr 2.8fr 1fr .8fr .9fr 1.1fr 196px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
+  .chip { display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 10px; border-radius:8px; border:1px solid var(--line); font-size:12.5px; color:var(--ink-3); }
+  .chip.hot { border-color:color-mix(in srgb, var(--signal) 45%, transparent); color:var(--signal); }
+  .dep { display:grid; grid-template-columns:150px minmax(0,1fr) 120px 80px 230px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
   .dep.head { border-top:0; padding-top:0; font-size:12px; color:var(--ink-3); }
   .rel { display:grid; grid-template-columns:110px 2.2fr 1fr .8fr 1fr 150px; align-items:center; column-gap:16px; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; }
   .rel.head { border-top:0; padding-top:0; font-size:12px; color:var(--ink-3); }
   .trunc { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ev { display:flex; gap:12px; align-items:center; padding:11px 18px; border-top:1px solid var(--line); font-size:13.5px; } .ev time { width:52px; color:var(--ink-3); font-size:12.5px; }
+  .sub { font-size:12.5px; margin-top:3px; } .warn { color:var(--warn); } .sig { color:var(--signal); }
+  .day { padding:14px 18px 6px; border-top:1px solid var(--line); font-size:12px; font-weight:500; color:var(--ink-2); letter-spacing:.02em; }
+  .ev { display:grid; grid-template-columns:52px 10px minmax(0,1fr) auto; align-items:center; column-gap:12px; padding:8px 18px; font-size:13.5px; } .ev:last-child { padding-bottom:14px; }
+  .ev time, .ev .end { color:var(--ink-3); font-size:12.5px; } .ev .end a { color:var(--ink-2); }
   .log { font:12px/1.7 "Geist Mono", ui-monospace, monospace; color:var(--ink-2); background:var(--ground-deep); border-radius:10px; padding:12px 14px; white-space:pre; overflow:auto; max-height:260px; }
   .two { display:grid; grid-template-columns:1.25fr 1fr; gap:20px; } .crumb { color:var(--ink-3); font-size:13px; } .crumb a { color:inherit; }
   .pill { font-size:12px; height:22px; padding:0 8px; border-radius:7px; display:inline-flex; align-items:center; background:var(--surface-2); color:var(--ink-2); }
   [hidden] { display:none !important; }
-  @media (max-width:700px) { nav.tabs { margin-left:8px; } .dep, .rel { display:flex; flex-wrap:wrap; gap:6px 12px; } .dep.head, .rel.head, .dep .cell, .rel .cell { display:none; } .two { grid-template-columns:1fr; } }
+  @media (max-width:700px) { nav.tabs { margin-left:8px; } .chip { display:none; } .dep, .rel { display:flex; flex-wrap:wrap; gap:6px 12px; } .dep.head, .rel.head, .dep .cell, .rel .cell { display:none; } .dep .run { flex-basis:100%; order:1; } .dep .act { order:2; } .ev { grid-template-columns:44px 10px minmax(0,1fr); } .ev .end { display:none; } .ev .trunc { white-space:normal; } .two { grid-template-columns:1fr; } }
   @media (max-width:700px) {
     main { padding:20px 16px 24px; gap:16px; } h1 { font-size:21px; }
     .legend .avail { margin-left:0; }
@@ -79,12 +86,12 @@
 </head>
 <body>
 <main>
-  <header><span style="display:flex;align-items:center"><span class="brand">scale0<small id="hostname"></small></span><nav class="tabs"><a href="#/services" id="tab-services">Services</a><a href="#/deploys" id="tab-deploys">Deploys</a></nav></span><span class="live"><span class="dot awake" id="liveDot"></span><b id="liveText">Live</b><span id="updated"></span></span></header>
+  <header><span style="display:flex;align-items:center"><span class="brand">scale0<small id="hostname"></small></span><nav class="tabs"><a href="#/services" id="tab-services">Services</a><a href="#/deploys" id="tab-deploys">Deploys</a></nav></span><span class="top"><span class="chip" id="self" hidden></span><span class="live"><span class="dot awake" id="liveDot"></span><b id="liveText">Live</b><span id="updated"></span></span></span></header>
   <div id="view-services" style="display:contents">
   <div><h1 id="headline">Loading…</h1><p class="lede" id="lede"></p></div>
   <section class="cd" id="memory"></section>
   <section class="cd" id="services"><div class="hd"><span>Services</span></div></section>
-  <p class="note">Read from systemd every 2 seconds. Wake starts a service now. Sleep stops it and closes its open connections; its next request wakes it again.</p>
+  <p class="note">Memory of an asleep service is what it used when last awake, so what its sleep frees. Wake starts it now; Sleep stops it and closes its connections, and its next request wakes it again.</p>
   </div>
   <div id="view-deploys" hidden style="display:contents"></div>
 </main>
@@ -98,26 +105,45 @@ const span = (v) => v ? String(v).replace(/(\d)([a-z]+)/g, "$1 $2").replace(/([a
 const LABEL = { awake: "Awake", waking: "Waking", asleep: "Asleep", failed: "Not healthy in time", off: "Not held" };
 let data = null, confirming = null, busy = new Set(), lastOk = 0;
 
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const list = (xs) => xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
+// "3 min", "4 h", "14 d": how long ago, without the "ago".
+const age = (t) => { const s = Math.max(0, Date.now() / 1000 - t); return s < 60 ? `${Math.round(s)} s` : s < 3600 ? `${Math.floor(s / 60)} min` : s < 86400 ? `${Math.floor(s / 3600)} h` : `${Math.floor(s / 86400)} d`; };
+const ago = (t) => !t ? "–" : Date.now() / 1000 - t < 60 ? "just now" : `${age(t)} ago`;
+
+function freedMb(svcs) { return svcs.filter((s) => s.state === "asleep").reduce((a, s) => a + (s.last_memory_mb || 0), 0); }
+
 function headline(svcs) {
   if (!svcs.length) return "No services opted in yet.";
   const n = (s) => svcs.filter((x) => x.state === s).length;
-  const parts = [["awake", n("awake")], ["waking", n("waking")], ["asleep", n("asleep")]].filter(([, c]) => c).map(([s, c], i) => i === 0 ? `${c} ${c === 1 ? "service" : "services"} ${s}` : `${c} ${s}`);
-  const failed = svcs.filter((x) => x.state === "failed").map((x) => x.name);
-  return `${parts.join(", ") || "Nothing running"}.${failed.length ? ` ${failed.join(", ")} didn’t wake.` : ""}`;
+  const counts = [["awake", n("awake")], ["waking", n("waking")], ["asleep", n("asleep")]].filter(([, c]) => c);
+  const parts = counts.length === 1 && counts[0][1] === svcs.length && svcs.length > 1 ? [`All ${svcs.length} services ${counts[0][0]}`]
+    : counts.map(([s, c], i) => i === 0 ? `${plural(c, "service", "services")} ${s}` : `${c} ${s}`);
+  const freed = freedMb(svcs), failed = svcs.filter((x) => x.state === "failed").map((x) => x.name);
+  return `${parts.join(", ") || "Nothing running"}${freed && n("asleep") ? `, freeing ${mb(freed)}` : ""}.${failed.length ? ` ${list(failed)} didn’t wake.` : ""}`;
 }
 
 function renderMemory(h, svcs) {
   if (h.name) $("hostname").textContent = `on ${h.name}`;
-  const awake = svcs.reduce((a, s) => a + (s.memory_mb || 0), 0);
-  const freed = svcs.filter((s) => s.state === "asleep").reduce((a, s) => a + (s.last_memory_mb || 0), 0);
+  const awake = svcs.reduce((a, s) => a + (s.memory_mb || 0), 0), freed = freedMb(svcs);
   const used = h.mem_total_mb - h.mem_available_mb, always = Math.max(0, used - awake);
   const pct = (v) => `${(100 * v / h.mem_total_mb).toFixed(2)}%`;
-  $("lede").innerHTML = freed ? `Sleeping services are freeing about <b class="num">${mb(freed)}</b>. Each wakes on its next request, which waits until it is ready.` : "Each service wakes on its next request, which waits until it is ready.";
-  $("memory").innerHTML = `<div class="hd"><span>Memory on ${esc(h.name || "this host")}</span><span class="num">${mb(h.mem_total_mb)} total</span></div>
+  const slow = svcs.filter((s) => s.last_cold_start_s != null).sort((a, b) => b.last_cold_start_s - a.last_cold_start_s)[0];
+  $("lede").innerHTML = `Each wakes on its next request, which waits until it is ready.${slow ? ` Slowest cold start: <b>${esc(slow.name)}</b> <span class="num">${dur(slow.last_cold_start_s)}</span>.` : ""}`;
+  $("memory").innerHTML = `<div class="hd"><span>Memory on ${esc(h.name || "this host")}</span><span class="num">${mb(h.mem_total_mb)} total · load ${esc(h.load[0])} on ${h.cpus} vCPU</span></div>
     <div style="padding:0 18px 16px"><div class="bar"><i class="k-on" style="width:${pct(always)}"></i><i class="k-in" style="width:${pct(awake)}"></i>${freed ? `<i class="freed" style="width:${pct(freed)}"></i>` : ""}</div>
     <div class="legend"><span><i class="sw k-on"></i>Always on <b class="num">${mb(always)}</b></span><span><i class="sw k-in"></i>Awake under scale0 <b class="num">${mb(awake)}</b></span>
-    <span><i class="sw freed"></i>Freed by sleep <b class="num">${mb(freed)}</b></span><span class="avail">Available <b class="num">${mb(h.mem_available_mb)}</b></span></div></div>
-    <div class="kv"><span>Load, 1 · 5 · 15 min</span><span class="num">${h.load.join(" · ")} <span class="faint">on ${h.cpus} vCPU</span></span></div>`;
+    <span><i class="sw freed"></i>Freed by sleep <b class="num">${mb(freed)}</b></span><span class="avail">Available <b class="num">${mb(h.mem_available_mb)}</b></span></div></div>`;
+}
+
+function renderSelf(v) {
+  const el = $("self");
+  if (!v || !v.commit) { el.hidden = true; return; }
+  el.hidden = false;
+  el.className = v.failed ? "chip hot" : "chip";
+  el.innerHTML = v.failed ? `<span class="mono">${esc(v.failed.slice(0, 7))}</span> failed its checks · staying on <span class="mono">${esc(v.commit.slice(0, 7))}</span>`
+    : `<span class="mono" style="color:var(--ink-2)">${esc(v.commit.slice(0, 7))}</span> updated ${ago(v.updated_at)}`;
+  el.title = v.failed ? "scale0 checks every new commit before switching to it; this one failed, see /var/lib/scale0-self/check.log on the host" : "The scale0 commit this host runs, and when it last switched";
 }
 
 function action(s) {
@@ -129,19 +155,20 @@ function action(s) {
   return "";
 }
 
-function row(s) {
-  const memory = s.state === "asleep" ? (s.last_memory_mb ? `<span class="faint">${mb(s.last_memory_mb)} freed</span>` : "–") : mb(s.memory_mb);
-  const conns = s.state === "awake" ? s.connections : `<span class="faint">–</span>`;
-  const cold = s.last_cold_start_s == null ? "–" : `${s.last_cold_start_s.toFixed(2)} s`;
-  const confirm = confirming === s.name && s.state === "awake" ? `<div class="confirm"><p>Sleep ${esc(s.name)} now? <span>${s.connections} open connection${s.connections === 1 ? "" : "s"} will close. Its next request wakes it${s.last_cold_start_s ? ` in about ${Math.round(s.last_cold_start_s)} s` : ""}.</span></p>
+function row(s, idle) {
+  const memory = s.state === "asleep" ? (s.last_memory_mb ? `<span class="muted">${mb(s.last_memory_mb)}</span>` : "–") : mb(s.memory_mb);
+  const cold = dur(s.last_cold_start_s);
+  const hot = s.state === "failed";
+  const facts = [`${LABEL[s.state] || esc(s.state)} <span class="num">${dur(s.since_s)}</span>`];
+  if (s.state === "awake") facts.push(plural(s.connections, "connection", "connections"));
+  if (!idle && s.idle) facts.push(`sleeps after ${esc(span(s.idle))}`);
+  const confirm = confirming === s.name && s.state === "awake" ? `<div class="confirm"><p>Sleep ${esc(s.name)} now? <span>${plural(s.connections, "open connection", "open connections")} will close. Its next request wakes it${s.last_cold_start_s ? ` in about ${Math.round(s.last_cold_start_s)} s` : ""}.</span></p>
     <div class="act"><button class="bt bt-primary" data-act="sleep-now" data-name="${esc(s.name)}">Sleep now</button><button class="bt bt-ghost" data-act="keep">Keep awake</button></div></div>` : "";
-  return `<div class="row${s.state === "failed" ? " cd-hot" : ""}">
+  return `<div class="row${hot ? " cd-hot" : ""}">
     <span class="name"><span class="dot ${esc(s.state)}"></span>${esc(s.name)}</span>
-    <span class="cell${s.state === "failed" ? "" : " muted"}" ${s.state === "failed" ? `style="color:var(--signal)"` : ""}>${LABEL[s.state] || esc(s.state)}</span>
-    <span class="cell num muted">${dur(s.since_s)}</span><span class="cell num r">${conns}</span><span class="cell num r">${memory}</span>
-    <span class="cell num r">${cold}</span><span class="cell num r muted">${esc(span(s.idle))}</span>
-    <span class="card-only muted" ${s.state === "failed" ? `style="color:var(--signal)"` : ""}>${LABEL[s.state] || esc(s.state)} · ${dur(s.since_s)}</span>
-    <span class="card-only facts"><span>Connections <b class="num">${s.state === "awake" ? s.connections : "–"}</b></span><span>Memory <b class="num">${s.state === "asleep" ? mb(s.last_memory_mb) + " freed" : mb(s.memory_mb)}</b></span><span>Cold start <b class="num">${cold}</b></span><span>Idle timeout <b class="num">${esc(span(s.idle))}</b></span></span>
+    <span class="${hot ? "sig" : "muted"}" style="font-size:13px">${facts.join(" · ")}</span>
+    <span class="cell num r">${memory}</span><span class="cell num r">${cold}</span>
+    <span class="card-only facts"><span>Memory <b class="num">${s.state === "asleep" ? mb(s.last_memory_mb) : mb(s.memory_mb)}</b></span><span>Cold start <b class="num">${cold}</b></span></span>
     <span class="act">${action(s)}</span>${confirm}</div>`;
 }
 
@@ -150,8 +177,11 @@ function render() {
   const svcs = data.services;
   $("headline").textContent = headline(svcs);
   renderMemory(data.host, svcs);
-  $("services").innerHTML = `<div class="hd"><span>Services · ${svcs.length} opted in</span><span>Each sleeps once it has had no connection for its idle timeout</span></div>
-    ${svcs.length ? `<div class="row head"><span>Service</span><span>State</span><span>Since</span><span class="r">Connections</span><span class="r">Memory</span><span class="r">Cold start</span><span class="r">Idle timeout</span><span></span></div>${svcs.map(row).join("")}`
+  renderSelf(data.scale0);
+  // One idle timeout for all goes in the header; otherwise each row says its own.
+  const idles = new Set(svcs.map((s) => s.idle)), idle = idles.size === 1 ? [...idles][0] : null;
+  $("services").innerHTML = `<div class="hd"><span>Services · ${svcs.length} opted in</span><span>${idle ? `Each sleeps after ${esc(span(idle))} with no connection` : "Each sleeps once it has had no connection for its idle timeout"}</span></div>
+    ${svcs.length ? `<div class="row head"><span>Service</span><span>State</span><span class="r">Memory</span><span class="r">Cold start</span><span></span></div>${svcs.map((s) => row(s, idle)).join("")}`
       : `<div class="empty">No services opted in yet. Run <span class="mono">scale0 enable &lt;name&gt;</span> on the host.</div>`}`;
 }
 
@@ -176,41 +206,107 @@ document.addEventListener("click", (e) => {
 });
 
 // ---------- Deploys ----------
-const ago = (t) => { if (!t) return "–"; const s = Date.now() / 1000 - t; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} h ago` : `${Math.floor(s / 86400)} d ago`; };
-const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-const day = (t) => t ? new Date(t * 1000).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "–";
-const secs = (s) => s == null ? "–" : s < 60 ? `${Math.round(s)} s` : `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, "0")} s`;
+const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const day = (t) => t ? new Date(t * 1000).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }) : "–";
+const dayName = (t) => new Date(t * 1000).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+const sameDay = (t) => new Date(t * 1000).toDateString() === new Date().toDateString();
+// "4 Oct · 14 d", "Today · 3 min"
+const when = (t) => t ? `${sameDay(t) ? "Today" : new Date(t * 1000).toLocaleDateString([], { day: "numeric", month: "short" })} · ${age(t)}` : "–";
+const secs = (s) => s == null ? "–" : s < 10 ? `${s.toFixed(1)} s` : s < 60 ? `${Math.round(s)} s` : `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, "0")} s`;
 const sha = (c) => c ? `<span class="sha">${esc(c.slice(0, 7))}</span>` : "–";
 let deps = null, confirmRollback = null, depBusy = new Set();
 const route = () => (location.hash.match(/^#\/deploys(?:\/([a-z][a-z0-9-]{0,30}))?/) || [])[0] ? { view: "deploys", app: location.hash.split("/")[2] || null } : { view: "services" };
-function state(a) {
-  if (a.busy) return { dot: "waking", text: a.running?.rollback ? "Rolling back…" : "Deploying…" };
-  if (a.failed) return { dot: "failed", text: `Rolled back ${clock(a.failed.at)}`, hot: true };
-  return { dot: "awake", text: "Live" };
+// What an app is doing, most urgent first: down, rejected, deploying or rolling back, held on purpose, behind, ok.
+function appState(a) {
+  const d = a.deployed || {}, h = a.head || {}, f = a.failed;
+  if (a.running) return a.running.rollback ? "rolling" : "deploying";
+  if (f) return f.restored ? "rejected" : "down";
+  if (h.commit && d.commit && h.commit !== d.commit) return a.hold === h.commit ? "held" : "behind";
+  return "ok";
+}
+const ORDER = ["down", "rejected", "deploying", "rolling", "held", "behind"];
+const DOT = { down: "failed", rejected: "failed", deploying: "waking", rolling: "waking" };
+function depTitle(apps) {
+  if (!apps.length) return "No apps deployed by scale0 yet.";
+  const of = (k) => apps.filter((a) => appState(a) === k).map((a) => a.name), is = (xs) => xs.length === 1 ? "is" : "are";
+  const say = {
+    down: (xs) => `${list(xs)} ${is(xs)} down: a new commit failed with nothing to roll back to.`,
+    rejected: (xs) => xs.length === 1 ? `${xs[0]}’s new commit failed and was rolled back.` : `New commits of ${list(xs)} failed and were rolled back.`,
+    deploying: (xs) => `${list(xs)} ${is(xs)} deploying.`,
+    rolling: (xs) => `${list(xs)} ${is(xs)} rolling back.`,
+    held: (xs) => `${list(xs)} ${is(xs)} held on an older release.`,
+    behind: (xs) => `${list(xs)} ${is(xs)} behind ${xs.length === 1 ? "its branch" : "their branches"}.`,
+  };
+  const out = ORDER.map((k) => [k, of(k)]).filter(([, xs]) => xs.length).map(([k, xs]) => say[k](xs));
+  return out.length ? out.join(" ") : apps.length === 1 ? `${apps[0].name} is serving its branch head.` : `All ${apps.length} apps are serving their branch head.`;
+}
+function depRow(a) {
+  const k = appState(a), d = a.deployed || {}, h = a.head || {}, f = a.failed, r = a.running, name = esc(a.name);
+  const first = d.commit ? `<div class="trunc">${sha(d.commit)} <span class="muted">${esc(d.subject || "")}</span></div>`
+    : `<div class="trunc">${k === "down" ? `<span class="sig">Not serving</span> <span class="muted">· nothing was live before this commit</span>` : `<span class="faint">Nothing deployed yet</span>`}</div>`;
+  const second = {
+    deploying: () => `<span class="warn">Deploying</span> ${sha(r.commit)} <span class="muted">· ${dur(Date.now() / 1000 - r.started_at)} so far</span>`,
+    rolling: () => `<span class="warn">Rolling back to</span> ${sha(r.commit)} <span class="muted">· ${dur(Date.now() / 1000 - r.started_at)} so far</span>`,
+    rejected: () => `<span class="sig">Rejected</span> ${sha(f.commit)} <span class="muted">${esc(f.reason)} · ${ago(f.at)}</span>`,
+    down: () => `<span class="sig">Failed</span> ${sha(f.commit)} <span class="muted">${esc(f.reason)}${d.commit ? " · couldn’t put the last release back" : ""} · ${ago(f.at)}</span>`,
+    held: () => `<span class="muted">Rolled back · holding</span> ${sha(h.commit)} <span class="muted">until a new push</span>`,
+    behind: () => `<span class="muted">Branch is ${h.ahead ? `<b style="font-weight:400;color:var(--ink)">${plural(h.ahead, "commit", "commits")}</b> ahead` : "newer"} at</span> ${sha(h.commit)} <span class="muted">· deploys on the next check, within about 2 min</span>`,
+  }[k];
+  const link = `<a class="bt bt-quiet" href="#/deploys/${name}">${f ? "Log" : "History"}</a>`;
+  const retry = f && f.commit === h.commit;
+  let btn;
+  if (r) btn = `<button class="bt bt-ghost" disabled>${k === "rolling" ? "Rolling back…" : "Deploying…"}</button>`;
+  else if (a.busy || depBusy.has(a.name)) btn = `<button class="bt bt-ghost" disabled>Checking…</button>`;
+  else {
+    const label = retry ? `Retry ${esc(f.commit.slice(0, 7))}` : k === "held" ? `Deploy ${esc(h.commit.slice(0, 7))}` : "Deploy now";
+    btn = `<button class="bt ${k === "down" || k === "behind" || (f && !retry) ? "bt-primary" : "bt-ghost"}" data-dep="deploy" data-app="${name}">${label}</button>`;
+  }
+  return `<div class="dep"><span class="name" style="display:flex;align-items:center;gap:12px;font-weight:500"><span class="dot ${DOT[k] || "awake"}"></span>${name}</span>
+    <div class="run" style="min-width:0">${first}${second ? `<div class="sub">${second()}</div>` : ""}</div>
+    <span class="cell num muted" style="font-size:13px">${when(d.live_at)}</span><span class="cell num r" style="font-size:13px">${secs(d.build_s)}</span>
+    <span class="act" style="gap:4px">${link}${btn}</span></div>`;
+}
+// One row per deploy: "picked up" is dropped (a running deploy shows in its app's row), and a commit that went live
+// after failing says so.
+function depEvents(apps) {
+  const all = apps.flatMap((a) => (a.events || []).filter((e) => e.kind !== "picked").map((e) => ({ ...e, a })));
+  all.sort((x, y) => y.at - x.at);
+  const subj = (a, c) => (a.releases || []).find((r) => r.commit === c)?.subject || (a.failed?.commit === c && a.failed.subject) || (a.head?.commit === c && a.head.subject) || "";
+  let last = "";
+  return all.slice(0, 14).map((e) => {
+    const a = e.a, name = `<b style="font-weight:500">${esc(a.name)}</b>`, dk = new Date(e.at * 1000).toDateString();
+    const heading = dk !== last ? `<div class="day">${sameDay(e.at) ? "Today" : esc(dayName(e.at))}</div>` : "";
+    last = dk;
+    let dot = "asleep", body = `${name} <span class="muted">${esc(e.text)}</span>`, end = "";
+    if (e.kind === "live") {
+      const retried = (a.events || []).some((x) => x.kind === "failed" && x.commit === e.commit && x.at < e.at);
+      dot = "awake"; body = `${name} ${sha(e.commit)} <span class="muted">${esc(subj(a, e.commit))}${retried ? " · after a failed try" : ""}</span>`;
+      end = e.build_s != null ? `built in ${secs(e.build_s)}` : "";
+    } else if (e.kind === "failed") {
+      dot = "failed";
+      body = /^rollback/.test(e.text) ? `${name} <span class="sig">${esc(e.text)}</span>`
+        : `${name} ${sha(e.commit)} <span class="sig">didn’t go live:</span> <span class="muted">${esc(e.text.replace(/^[0-9a-f]{7,40} /, ""))}</span>`;
+      if (a.failed?.commit === e.commit) end = `<a href="#/deploys/${esc(a.name)}">Log</a>`;
+    } else if (e.kind === "rollback") dot = "awake";
+    return `${heading}<div class="ev"><time class="num">${clock(e.at)}</time><span class="dot ${dot}"></span><span class="trunc">${body}</span><span class="end num">${end}</span></div>`;
+  }).join("");
 }
 function depList() {
-  const apps = deps.apps, behind = apps.filter((a) => a.head && a.deployed && a.head.commit !== a.deployed.commit && !a.failed && a.hold !== a.head.commit);
-  const failed = apps.filter((a) => a.failed);
-  const ok = apps.length - failed.length - behind.length;
-  const title = !apps.length ? "No apps deployed by scale0 yet." : `${ok} ${ok === 1 ? "app" : "apps"} up to date.${failed.length ? ` ${failed.map((a) => a.name).join(", ")}’s last deploy rolled back.` : ""}${behind.length ? ` ${behind.map((a) => a.name).join(", ")} ${behind.length === 1 ? "is" : "are"} deploying next.` : ""}`;
-  const rows = apps.map((a) => { const s = state(a), d = a.deployed || {}, h = a.head || {};
-    const headCell = !h.commit || h.commit === d.commit ? `<span class="faint">same</span>` : `${sha(h.commit)} <span style="color:${a.failed ? "var(--signal)" : "var(--ink-2)"}">${a.hold === h.commit ? "held" : "newer"}</span>`;
-    const act = a.failed ? `<button class="bt bt-signal" data-dep="detail" data-app="${esc(a.name)}">See why</button>` : `<button class="bt bt-ghost" data-dep="deploy" data-app="${esc(a.name)}" ${a.busy || depBusy.has(a.name) ? "disabled" : ""}>${a.busy ? "Running…" : "Deploy now"}</button>`;
-    return `<div class="dep${s.hot ? " cd-hot" : ""}"><span class="name" style="display:flex;align-items:center;gap:12px;font-weight:500"><span class="dot ${s.dot}"></span>${esc(a.name)}</span>
-      <span class="trunc">${sha(d.commit)} <span class="muted">${esc(d.subject || "")}</span></span><span class="cell">${headCell}</span><span class="cell num muted">${ago(d.live_at)}</span>
-      <span class="cell num r">${secs(d.build_s)}</span><span class="cell" style="${s.hot ? "color:var(--signal)" : ""}">${s.text}</span>
-      <span class="act"><a class="bt bt-quiet" href="#/deploys/${esc(a.name)}">History</a>${act}</span></div>`; }).join("");
-  const events = apps.flatMap((a) => (a.events || []).map((e) => ({ ...e, app: a.name }))).sort((x, y) => y.at - x.at).slice(0, 8);
-  const dotOf = (k) => ({ failed: "failed", picked: "waking", live: "awake", rollback: "awake", imported: "asleep" })[k] || "asleep";
-  return `<div><h1>${esc(title)}</h1><p class="lede">Each app’s timer checks its branch every 2 minutes, builds what’s new, and goes live only if the health check passes.</p></div>
-    <section class="cd"><div class="hd"><span>Apps · ${apps.length} deployed by scale0</span><span>History keeps the last releases for rollback</span></div>
-    ${apps.length ? `<div class="dep head"><span>App</span><span>Running</span><span>Branch head</span><span>Went live</span><span class="r">Build</span><span>Health</span><span></span></div>${rows}` : `<div class="empty">Add one with <span class="mono">scale0 deploy add &lt;app&gt; &lt;repo&gt;</span>.</div>`}</section>
-    ${events.length ? `<section class="cd"><div class="hd"><span>Recent activity</span><span>From the deployer</span></div>${events.map((e) => `<div class="ev"><time class="num">${clock(e.at)}</time><span class="dot ${dotOf(e.kind)}"></span><span style="flex:1"><b style="font-weight:500">${esc(e.app)}</b> <span class="muted">${esc(e.text)}</span></span>${e.build_s ? `<span class="faint num" style="font-size:12.5px">${secs(e.build_s)}</span>` : ""}</div>`).join("")}</section>` : ""}
-    <p class="note">Deploy now runs an app’s check immediately and retries a commit that failed. Roll back is in each app’s history and asks first.</p>`;
+  const apps = deps.apps;
+  const lastLive = apps.filter((a) => a.deployed?.live_at).sort((x, y) => y.deployed.live_at - x.deployed.live_at)[0];
+  const checks = apps.map((a) => a.last_check_at).filter(Boolean);
+  const lede = [lastLive ? `Last deploy <b>${esc(lastLive.name)}</b> ${sha(lastLive.deployed.commit)} ${ago(lastLive.deployed.live_at)}` : "",
+    checks.length ? `branches checked ${ago(Math.min(...checks))}` : ""].filter(Boolean).join(" · ");
+  const events = depEvents(apps);
+  return `<div><h1>${esc(depTitle(apps))}</h1><p class="lede">${lede}</p></div>
+    <section class="cd"><div class="hd"><span>Apps · ${apps.length} deployed by scale0</span><span>Kept releases are in each app’s history</span></div>
+    ${apps.length ? `<div class="dep head"><span>App</span><span>Running</span><span>Went live</span><span class="r">Build</span><span></span></div>${apps.map(depRow).join("")}` : `<div class="empty">Add one with <span class="mono">scale0 deploy add &lt;app&gt; &lt;repo&gt;</span>.</div>`}</section>
+    ${events ? `<section class="cd"><div class="hd"><span>Recent deploys</span><span>Your local time</span></div>${events}</section>` : ""}
+    <p class="note">Each app’s timer checks its branch every 2 minutes and goes live only if the health check passes. Deploy now checks immediately and retries a failed commit; roll back is in History and asks first.</p>`;
 }
 function depDetail(a) {
   const d = a.deployed || {}, f = a.failed;
-  const failCard = f ? `<section class="cd cd-hot"><div class="hd"><span style="color:var(--signal)">Last deploy · rolled back at ${clock(f.at)}</span>${sha(f.commit)}</div>
+  const failCard = f ? `<section class="cd cd-hot"><div class="hd"><span style="color:var(--signal)">Last deploy · ${f.restored ? "rolled back" : "failed"} ${esc(day(f.at))}</span>${sha(f.commit)}</div>
     <div style="padding:0 18px 16px;display:flex;flex-direction:column;gap:12px"><p>${esc(f.commit.slice(0, 7))} ${esc(f.reason)}.${f.restored ? ` The deployer put ${esc(f.restored.slice(0, 7))} back.` : " There was no earlier release to put back."}</p><div class="log">${esc((f.log || []).join("\n"))}</div></div></section>` : "";
   const rels = (a.releases || []).map((r) => {
     const can = r.status === "superseded", open = confirmRollback === `${a.name}:${r.commit}`;
@@ -224,7 +320,7 @@ function depDetail(a) {
     <button class="bt bt-primary" data-dep="deploy" data-app="${esc(a.name)}" ${a.busy ? "disabled" : ""}>${a.busy ? "Running…" : f ? `Retry ${esc(f.commit.slice(0, 7))}` : "Deploy now"}</button></div>
     ${failCard}
     <section class="cd"><div class="hd"><span>Running</span>${sha(d.commit)}</div><div class="kv"><span>Subject</span><span>${esc(d.subject || "–")}</span></div><div class="kv"><span>Went live</span><span class="num">${day(d.live_at)}${d.how === "rollback" ? " · by rollback" : ""}</span></div>
-      <div class="kv"><span>Branch head</span><span>${sha(a.head?.commit)}${a.hold && a.hold === a.head?.commit ? " · held after a rollback" : ""}</span></div><div class="kv"><span>Last check</span><span class="num">${ago(a.last_check_at)}</span></div></section>
+      <div class="kv"><span>Branch head</span><span>${sha(a.head?.commit)}${a.hold && a.hold === a.head?.commit ? " · held after a rollback" : a.head?.ahead ? ` · ${plural(a.head.ahead, "commit", "commits")} ahead` : ""}</span></div><div class="kv"><span>Last check</span><span class="num">${ago(a.last_check_at)}</span></div></section>
     <section class="cd"><div class="hd"><span>Releases</span><span>Rollback rebuilds the commit</span></div>${rels ? `<div class="rel head"><span>Commit</span><span>Subject</span><span>Went live</span><span class="r">Build</span><span>Status</span><span></span></div>${rels}` : `<div class="empty">No releases yet.</div>`}</section>`;
 }
 function renderDeploys() {
